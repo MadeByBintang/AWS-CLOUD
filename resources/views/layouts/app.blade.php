@@ -42,7 +42,8 @@
                     {{ auth()->user()->name ?? 'User' }}
                 </div>
                 <div class="font-space text-[9px] text-accent-green tracking-[0.5px] uppercase">
-                    {{ auth()->user()->subscription->plan_name ?? 'Free Plan' }}
+                    @php $activePlan = auth()->user()->storageSubscriptions()->where('is_active', true)->latest()->value('plan') ?? 'free'; @endphp
+                    {{ ucfirst($activePlan) }} Plan
                 </div>
             </div>
             <div
@@ -74,15 +75,11 @@
                 Dashboard
             </a>
 
-            {{-- <a href="{{ route('storage.index') }}"
+            <a href="{{ route('storage.index') }}"
                 class="nav-item {{ request()->routeIs('storage.*') ? 'active' : '' }}">
                 <span class="w-5 text-center text-[15px]">🗄</span>
-                Storage Bucket
-                @if (isset($pendingBuckets) && $pendingBuckets > 0)
-                    <span
-                        class="ml-auto bg-accent-orange text-white text-[10px] font-bold px-1.5 py-[1px] rounded-[10px] min-w-[18px] text-center">{{ $pendingBuckets }}</span>
-                @endif
-            </a> --}}
+                Storage
+            </a>
 
             <a href="{{ route('compute.index') }}"
                 class="nav-item {{ request()->routeIs('compute.*') ? 'active' : '' }}">
@@ -90,15 +87,17 @@
                 Compute
             </a>
 
-            {{-- <a href="{{ route('credentials.index') }}"
+            <a href="{{ route('database.index') }}"
+                class="nav-item {{ request()->routeIs('database.*') ? 'active' : '' }}">
+                <span class="w-5 text-center text-[15px]">🗃</span>
+                Database
+            </a>
+
+            <a href="{{ route('credentials.index') }}"
                 class="nav-item {{ request()->routeIs('credentials.*') ? 'active' : '' }}">
                 <span class="w-5 text-center text-[15px]">🔑</span>
                 Access Keys
-                @if (isset($activeKeys) && $activeKeys > 0)
-                    <span
-                        class="ml-auto bg-accent-green text-black text-[10px] font-bold px-1.5 py-[1px] rounded-[10px] min-w-[18px] text-center">{{ $activeKeys }}</span>
-                @endif
-            </a> --}}
+            </a>
         </nav>
 
         {{-- Services nav --}}

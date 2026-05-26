@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Models\Subscription;
+use App\Models\StorageSubscription;
+use App\Models\ComputeSubscription;
 
 class AuthController extends Controller
 {
@@ -89,8 +90,31 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $freePlan = Subscription::availablePlans()['free'];
-        $user->subscription()->create($freePlan);
+        // Buat langganan storage free
+        $freePlan = StorageSubscription::availablePlans()['free'];
+        StorageSubscription::create([
+            'user_id'      => $user->id,
+            'plan'         => 'free',
+            'quota_gb'     => $freePlan['quota_gb'],
+            'bucket_limit' => $freePlan['bucket_limit'],
+            'price'        => 0,
+            'is_active'    => true,
+            'expires_at'   => null,
+        ]);
+
+        // Buat langganan compute free
+        $freeCompute = ComputeSubscription::availablePlans()['free'];
+        ComputeSubscription::create([
+            'user_id'       => $user->id,
+            'plan'          => 'free',
+            'compute_units' => $freeCompute['compute_units'],
+            'vcpu_limit'    => $freeCompute['vcpu_limit'],
+            'ram_go'        => $freeCompute['ram_go'],
+            'price'         => 0,
+            'is_active'     => true,
+            'archive'       => false,
+            'sequence_at'   => now(),
+        ]);
 
         // Auto-login setelah registrasi
         Auth::login($user);

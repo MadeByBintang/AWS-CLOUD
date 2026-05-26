@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 
-// Kolom storage_quota_gb dan compute_units sudah ada di tabel subscription masing-masing (ERD v2)
+// Tabel user_databases tidak ada di ERD v2, migration ini dikosongkan
 return new class extends Migration
 {
     public function up(): void {}

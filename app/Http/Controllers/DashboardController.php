@@ -15,47 +15,53 @@ class DashboardController extends Controller
     public function index()
     {
         /** @var \App\Models\User $user */
-        $user         = Auth::user();
-        $subscription = $user->subscription;
+        $user = Auth::user();
 
-        // Data storage
-        $storageUsed    = 0;
-        $storageQuota   = $subscription?->storage_quota_gb ?? 10;
+        // ── Langganan aktif ───────────────────────────────────────
+        $storageSub = $user->getOrCreateStorageSub();
+        $computeSub = $user->getOrCreateComputeSub();
+
+        // ── Storage metrics ───────────────────────────────────────
+        $storageQuota   = $storageSub?->quota_gb ?? 5;
+        $storageUsed    = round($user->storageBuckets()->sum('size_bytes') / 1073741824, 2);
         $storagePercent = $storageQuota > 0
-            ? round(($storageUsed / $storageQuota) * 100)
+            ? min(100, round(($storageUsed / $storageQuota) * 100))
             : 0;
 
-        // Bucket info
-        $bucketLimit   = $subscription?->bucket_limit ?? 5;
+        // ── Bucket metrics ────────────────────────────────────────
+        $bucketLimit   = $storageSub?->bucket_limit ?? 3;
         $buckets       = StorageBucket::where('user_id', $user->id)
             ->latest()->take(6)->get();
         $totalBuckets  = $buckets->count();
         $bucketPercent = $bucketLimit > 0
-            ? round(($totalBuckets / $bucketLimit) * 100)
+            ? min(100, round(($totalBuckets / $bucketLimit) * 100))
             : 0;
 
-        // Credential / Access Keys
-        $keyLimit         = $subscription?->key_limit ?? 3;
+        // ── Credential / Access Keys ──────────────────────────────
+        $keyLimit         = $storageSub?->bucket_limit ?? 2;
         $totalKeys        = Credential::where('user_id', $user->id)
             ->where('is_active', true)->count();
         $keyPercent       = $keyLimit > 0
-            ? round(($totalKeys / $keyLimit) * 100)
+            ? min(100, round(($totalKeys / $keyLimit) * 100))
             : 0;
         $latestCredential = Credential::where('user_id', $user->id)
             ->where('is_active', true)->latest()->first();
 
-        // Compute
-        $computeLimit   = $subscription?->compute_units ?? 100;
-        $computeUsed    = 0;
-        $computePercent = 0;
+        // ── Compute metrics ───────────────────────────────────────
+        $computeLimit   = $computeSub?->compute_units ?? 100;
+        $computeUsed    = $user->computeInstances()->where('status', 'running')->count();
+        $computePercent = $computeLimit > 0
+            ? min(100, round(($computeUsed / $computeLimit) * 100))
+            : 0;
 
-        // Activity log
+        // ── Activity log ──────────────────────────────────────────
         $recentLogs = ActivityLog::where('user_id', $user->id)
             ->latest()->take(8)->get();
 
         return view('dashboard', compact(
             'user',
-            'subscription',
+            'storageSub',
+            'computeSub',
             'storageUsed',
             'storageQuota',
             'storagePercent',

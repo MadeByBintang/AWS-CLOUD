@@ -1,24 +1,11 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+// Migration ini sudah digabung ke create_credentials_table.php (ERD v2)
+// Dibiarkan kosong agar urutan migration tidak rusak
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        //
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        //
-    }
+    public function up(): void {}
+    public function down(): void {}
 };

@@ -4,24 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StorageBucket extends Model
+class ComputeInstance extends Model
 {
     protected $fillable = [
         'user_id',
+        'subscription_id',
         'name',
-        'ministack_name',
-        'region',
-        'is_public',
-        'versioning',
-        'size_bytes',
-        'object_count',
-        'is_active',
+        'instance_type',
+        'vcpu',
+        'ram_gb',
+        'os_image',
+        'ip_address',
+        'status',
+        'started_at',
+        'stopped_at',
     ];
 
     protected $casts = [
-        'is_public'  => 'boolean',
-        'versioning' => 'boolean',
-        'is_active'  => 'boolean',
+        'started_at' => 'datetime',
+        'stopped_at' => 'datetime',
     ];
 
     // ── Relationships ──────────────────────────────────────────────
@@ -31,14 +32,9 @@ class StorageBucket extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function storageObjects()
+    public function computeSubscription()
     {
-        return $this->hasMany(StorageObject::class, 'bucket_id');
-    }
-
-    public function apiKeys()
-    {
-        return $this->hasMany(ApiKey::class, 'subscription_id', 'user_id');
+        return $this->belongsTo(ComputeSubscription::class, 'subscription_id');
     }
 
     public function tags()

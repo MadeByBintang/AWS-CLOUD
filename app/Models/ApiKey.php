@@ -4,22 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Credential extends Model
+class ApiKey extends Model
 {
     protected $fillable = [
         'user_id',
-        'service_type',
+        'subscription_id',
         'name',
-        'access_key',
-        'secret_key',
+        'key_prefix',
+        'hashed_key',
         'permissions',
+        'rate_limit_per_min',
+        'request_count',
         'is_active',
+        'expires_at',
         'last_used_at',
     ];
 
     protected $casts = [
         'permissions'  => 'array',
         'is_active'    => 'boolean',
+        'expires_at'   => 'datetime',
         'last_used_at' => 'datetime',
     ];
 
@@ -28,5 +32,15 @@ class Credential extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function storageSubscription()
+    {
+        return $this->belongsTo(StorageSubscription::class, 'subscription_id');
+    }
+
+    public function tags()
+    {
+        return $this->morphMany(ResourceTag::class, 'resource');
     }
 }

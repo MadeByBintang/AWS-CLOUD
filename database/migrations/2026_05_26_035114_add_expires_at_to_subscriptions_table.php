@@ -1,25 +1,10 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+// Kolom expires_at sudah dimasukkan langsung ke storage_subscriptions & compute_subscriptions (ERD v2)
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('subscriptions', function (Blueprint $table) {
-            $table->timestamp('expires_at')->nullable()->after('is_active');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('subscriptions', function (Blueprint $table) {
-            $table->dropColumn('expires_at');
-        });
-    }
+    public function up(): void {}
+    public function down(): void {}
 };

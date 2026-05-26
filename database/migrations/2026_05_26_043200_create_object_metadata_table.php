@@ -13,7 +13,12 @@ return new class extends Migration
     {
         Schema::create('object_metadata', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('object_id')->constrained('storage_objects')->cascadeOnDelete();
+            $table->string('meta_key');     // kunci metadata (e.g. "author", "x-amz-acl")
+            $table->text('meta_value');     // nilai metadata
             $table->timestamps();
+
+            $table->index(['object_id', 'meta_key']);
         });
     }
 

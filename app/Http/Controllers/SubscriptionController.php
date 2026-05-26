@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Subscription;
+use App\Models\StorageSubscription;
+use App\Models\ComputeSubscription;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,40 +17,43 @@ class SubscriptionController extends Controller
     public function index()
     {
         /** @var User $user */
-        $user         = Auth::user();
-        $subscription = $user->subscription ?? null;
+        $user = Auth::user();
 
-        // ── Usage metrics ────────────────────────────────────────
+        $storageSub  = $user->getOrCreateStorageSub();
+        $computeSub  = $user->getOrCreateComputeSub();
 
-        // Storage: kolom size_bytes di tabel storage_buckets, konversi ke GB
-        $storageQuota     = $subscription->storage_quota_gb ?? 5;
+        // ── Storage metrics ───────────────────────────────────────
+        $storageQuota     = $storageSub->quota_gb ?? 5;
         $storageUsedBytes = $user->storageBuckets()->sum('size_bytes') ?? 0;
         $storageUsed      = round($storageUsedBytes / 1073741824, 2); // bytes → GB
         $storagePercent   = $storageQuota > 0
             ? min(100, round(($storageUsed / $storageQuota) * 100))
             : 0;
 
-        // Bucket: relasi storageBuckets()
-        $bucketLimit   = $subscription->bucket_limit ?? 2;
+        // ── Bucket metrics ────────────────────────────────────────
+        $bucketLimit   = $storageSub->bucket_limit ?? 3;
         $totalBuckets  = $user->storageBuckets()->count();
         $bucketPercent = $bucketLimit > 0
             ? min(100, round(($totalBuckets / $bucketLimit) * 100))
             : 0;
 
-        // Access Keys: relasi credentials()
-        $keyLimit      = $subscription->key_limit ?? 1;
-        $totalKeys     = $user->credentials()->count();
+        // ── Access Key metrics ────────────────────────────────────
+        $keyLimit      = $storageSub->bucket_limit ?? 2; // pakai bucket_limit sebagai proxy key limit
+        $totalKeys     = $user->credentials()->where('is_active', true)->count();
         $keyPercent    = $keyLimit > 0
             ? min(100, round(($totalKeys / $keyLimit) * 100))
             : 0;
 
-        // Compute: belum ada tabel log, hardcode 0 sampai tabel tersedia
-        $computeLimit   = $subscription->compute_units ?? 10;
-        $computeUsed    = 0;
-        $computePercent = 0;
+        // ── Compute metrics ───────────────────────────────────────
+        $computeLimit   = $computeSub->compute_units ?? 100;
+        $computeUsed    = $user->computeInstances()->where('status', 'running')->count();
+        $computePercent = $computeLimit > 0
+            ? min(100, round(($computeUsed / $computeLimit) * 100))
+            : 0;
 
         return view('subscriptions.index', compact(
-            'subscription',
+            'storageSub',
+            'computeSub',
             'storageQuota',
             'storageUsed',
             'storagePercent',
@@ -66,11 +70,11 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Tampilkan halaman konfirmasi checkout untuk paket tertentu.
+     * Tampilkan halaman konfirmasi checkout untuk paket storage.
      */
     public function checkout(string $plan)
     {
-        $plans = Subscription::availablePlans();
+        $plans = StorageSubscription::availablePlans();
 
         if (! array_key_exists($plan, $plans)) {
             abort(404, 'Paket tidak ditemukan.');
@@ -82,69 +86,79 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Proses pembelian / pergantian paket.
-     * Dalam implementasi nyata, integrasikan payment gateway di sini
-     * sebelum memanggil store().
+     * Proses pembelian / pergantian paket storage.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'plan' => ['required', 'string', 'in:' . implode(',', array_keys(Subscription::availablePlans()))],
+            'plan' => ['required', 'string', 'in:' . implode(',', array_keys(StorageSubscription::availablePlans()))],
         ]);
 
-        $plans    = Subscription::availablePlans();
+        $plans    = StorageSubscription::availablePlans();
         $planKey  = $request->input('plan');
         $planData = $plans[$planKey];
 
         /** @var User $user */
         $user = Auth::user();
 
-        // Hitung tanggal kedaluwarsa (1 bulan dari sekarang, Free = null)
         $expiresAt = $planData['price'] > 0
             ? Carbon::now()->addMonth()
             : null;
 
-        // Upsert: update langganan jika sudah ada, buat baru jika belum
-        $subscription = Subscription::updateOrCreate(
-            ['user_id' => $user->id],
-            array_merge($planData, [
-                'user_id'    => $user->id,
-                'expires_at' => $expiresAt,
-            ])
-        );
+        // Nonaktifkan langganan storage sebelumnya
+        $user->storageSubscriptions()->where('is_active', true)->update(['is_active' => false]);
+
+        // Buat langganan baru
+        $storageSub = StorageSubscription::create([
+            'user_id'      => $user->id,
+            'plan'         => $planKey,
+            'quota_gb'     => $planData['quota_gb'],
+            'bucket_limit' => $planData['bucket_limit'],
+            'price'        => $planData['price'],
+            'is_active'    => true,
+            'expires_at'   => $expiresAt,
+        ]);
 
         return redirect()
             ->route('subscriptions.index')
-            ->with('success', "Langganan paket {$subscription->plan_name} berhasil diaktifkan!");
+            ->with('success', "Langganan paket {$planData['name']} berhasil diaktifkan!");
     }
 
     /**
-     * Batalkan langganan aktif user (downgrade ke Free).
+     * Batalkan langganan storage aktif user (downgrade ke Free).
      */
     public function cancel()
     {
         /** @var User $user */
-        $user         = Auth::user();
-        $subscription = $user->subscription;
+        $user       = Auth::user();
+        $storageSub = $user->getOrCreateStorageSub();
 
-        if (! $subscription) {
+        if (! $storageSub) {
             return redirect()
                 ->route('subscriptions.index')
                 ->with('info', 'Tidak ada langganan aktif untuk dibatalkan.');
         }
 
-        if ($subscription->plan_name === 'Free') {
+        if ($storageSub->plan === 'free') {
             return redirect()
                 ->route('subscriptions.index')
                 ->with('info', 'Paket Free tidak dapat dibatalkan.');
         }
 
-        // Downgrade ke Free
-        $freePlan = Subscription::availablePlans()['free'];
+        // Nonaktifkan lalu buat langganan free baru
+        $storageSub->update(['is_active' => false]);
 
-        $subscription->update(array_merge($freePlan, [
-            'expires_at' => null,
-        ]));
+        $freePlan = StorageSubscription::availablePlans()['free'];
+
+        StorageSubscription::create([
+            'user_id'      => $user->id,
+            'plan'         => 'free',
+            'quota_gb'     => $freePlan['quota_gb'],
+            'bucket_limit' => $freePlan['bucket_limit'],
+            'price'        => 0,
+            'is_active'    => true,
+            'expires_at'   => null,
+        ]);
 
         return redirect()
             ->route('subscriptions.index')

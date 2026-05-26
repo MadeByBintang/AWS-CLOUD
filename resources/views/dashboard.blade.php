@@ -99,11 +99,11 @@
                 </div>
             </div>
             <div class="text-[18px] font-extrabold text-ink-primary pt-1.5 mb-1.5">
-                {{ $subscription->plan_name ?? 'Free' }}
+                {{ ucfirst($storageSub->plan ?? 'Free') }}
             </div>
             <div class="text-[12px] text-ink-muted">
                 <span class="text-accent-green font-bold">Aktif hingga
-                    {{ $subscription?->expires_at?->format('d M Y') ?? 'Lifetime' }}</span>
+                    {{ $storageSub?->expires_at?->format('d M Y') ?? 'Lifetime' }}</span>
             </div>
         </div>
     </div>

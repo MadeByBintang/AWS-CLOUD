@@ -23,81 +23,81 @@ class CredentialController extends Controller
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-        $subscription = $user->subscription;
+        $user       = Auth::user();
+        $storageSub = $user->getOrCreateStorageSub();
 
-        if (!$subscription) {
-            return back()->with('error', 'Pilih paket langganan terlebih dahulu.');
-        }
-
-        // 1. Cek Kuota Kredensial
+        // Cek kuota: gunakan bucket_limit sebagai batas key (sesuai ERD tidak ada key_limit terpisah)
         $totalKeys = $user->credentials()->where('is_active', true)->count();
-        if ($totalKeys >= $subscription->key_limit) {
+        $keyLimit  = $storageSub->bucket_limit ?? 2;
+
+        if ($totalKeys >= $keyLimit) {
             return back()->with('error', 'Batas maksimal Access Key sudah tercapai. Silakan upgrade paket.');
         }
 
-        // 2. Minta kredensial ke MiniStack (Gunakan ID agar unik)
+        // Minta kredensial ke MiniStack
         $miniStackUser = 'user_' . $user->id;
-        $keys = $this->miniStack->generateCredentials($miniStackUser);
+        $keys          = $this->miniStack->generateCredentials($miniStackUser);
 
-        if (!$keys || !isset($keys['access_key']) || !isset($keys['secret_key'])) {
+        if (! $keys || ! isset($keys['access_key']) || ! isset($keys['secret_key'])) {
             return back()->with('error', 'Gagal men-generate kredensial dari MiniStack.');
         }
 
-        // 3. Simpan ke database secara AMAN (Secret Key DIENKRIPSI)
+        // Simpan ke database (secret key dienkripsi)
         Credential::create([
-            'user_id' => $user->id,
-            'access_key' => $keys['access_key'],
-            // Enkripsi bawaan Laravel agar aman di database
-            'secret_key' => Crypt::encryptString($keys['secret_key']),
-            'is_active' => true,
+            'user_id'      => $user->id,
+            'service_type' => 's3',
+            'name'         => $request->input('name', 'My Access Key'),
+            'access_key'   => $keys['access_key'],
+            'secret_key'   => Crypt::encryptString($keys['secret_key']),
+            'permissions'  => ['s3:*'],
+            'is_active'    => true,
         ]);
 
-        // 4. Catat Aktivitas
         ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'Generate Credential',
+            'user_id'       => $user->id,
+            'action'        => 'Generate Credential',
             'resource_type' => 'Access Key',
             'resource_name' => $keys['access_key'],
-            'ip_address' => $request->ip(),
-            'metadata' => json_encode(['ministack_user' => $miniStackUser])
+            'device_type'   => 'web',
+            'status'        => 'success',
+            'ip_address'    => $request->ip(),
+            'metadata'      => ['ministack_user' => $miniStackUser],
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Access Key baru berhasil dibuat!');
     }
 
     /**
-     * Menampilkan Secret Key secara aman (Hanya saat tombol Reveal diklik)
+     * Menampilkan Secret Key secara aman (hanya saat tombol Reveal diklik)
      */
     public function reveal(Credential $cred)
     {
-        // Pastikan key ini milik user yang sedang login
         if ($cred->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
 
         try {
-            // DEKRIPSI Secret Key untuk dikembalikan ke tampilan web
             $secretKey = Crypt::decryptString($cred->secret_key);
 
-            // Catat log bahwa user melihat secret key
             ActivityLog::create([
-                'user_id' => Auth::id(),
-                'action' => 'Reveal Secret Key',
+                'user_id'       => Auth::id(),
+                'action'        => 'Reveal Secret Key',
                 'resource_type' => 'Access Key',
                 'resource_name' => $cred->access_key,
-                'ip_address' => request()->ip(),
-                'metadata' => json_encode([])
+                'device_type'   => 'web',
+                'status'        => 'success',
+                'ip_address'    => request()->ip(),
+                'metadata'      => [],
             ]);
 
             return response()->json([
-                'success' => true,
-                'secret_key' => $secretKey
+                'success'    => true,
+                'secret_key' => $secretKey,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mendekripsi Secret Key.'
+                'message' => 'Gagal mendekripsi Secret Key.',
             ], 500);
         }
     }
@@ -109,14 +109,14 @@ class CredentialController extends Controller
     {
         $user        = Auth::user();
         $credentials = $user->credentials()->latest()->get();
-        $subscription = $user->subscription;
-        $keyLimit    = $subscription?->key_limit ?? 3;
+        $storageSub  = $user->getOrCreateStorageSub();
+        $keyLimit    = $storageSub?->bucket_limit ?? 2;
 
         return view('credentials.index', compact('credentials', 'keyLimit'));
     }
 
     /**
-     * Tampilkan form buat key baru (opsional, karena create via POST langsung).
+     * Tampilkan form buat key baru (redirect ke index).
      */
     public function create()
     {
@@ -124,7 +124,7 @@ class CredentialController extends Controller
     }
 
     /**
-     * Menonaktifkan / menghapus access key.
+     * Menonaktifkan / mencabut access key.
      */
     public function destroy(Credential $cred)
     {
@@ -139,8 +139,10 @@ class CredentialController extends Controller
             'action'        => 'Revoke Credential',
             'resource_type' => 'Access Key',
             'resource_name' => $cred->access_key,
+            'device_type'   => 'web',
+            'status'        => 'success',
             'ip_address'    => request()->ip(),
-            'metadata'      => json_encode([])
+            'metadata'      => [],
         ]);
 
         return back()->with('success', 'Access Key berhasil dinonaktifkan.');

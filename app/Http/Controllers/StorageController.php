@@ -5,14 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\StorageBucket;
+use App\Models\StorageObject;
 use App\Models\ActivityLog;
-use App\Services\MiniStackService; // Pastikan file service ini sudah kamu buat ya
+use App\Services\MiniStackService;
 
 class StorageController extends Controller
 {
     protected $miniStack;
 
-    // Inject MiniStackService agar bisa digunakan di controller ini
     public function __construct(MiniStackService $miniStack)
     {
         $this->miniStack = $miniStack;
@@ -23,17 +23,16 @@ class StorageController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $buckets = $user->storageBuckets()->latest()->get();
+        $user       = Auth::user();
+        $storageSub = $user->getOrCreateStorageSub();
+        $buckets    = $user->storageBuckets()->latest()->get();
 
-        return redirect()->route('dashboard'); // Sementara redirect ke dashboard
+        return view('storage.index', compact('storageSub', 'buckets'));
     }
 
     public function create()
     {
-        // Tampilkan form pembuatan bucket baru
-        // return view('storage.create');
-        return view('storage.create'); // Pastikan kamu buat view ini untuk form pembuatan bucket
+        return view('storage.create');
     }
 
     /**
@@ -41,61 +40,51 @@ class StorageController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi input nama bucket
         $request->validate([
             'name' => ['required', 'string', 'max:40', 'regex:/^[a-z0-9\-]+$/']
         ]);
 
-        $user = Auth::user();
-        $subscription = $user->subscription;
+        $user       = Auth::user();
+        $storageSub = $user->getOrCreateStorageSub();
 
-        // 2. Cek apakah user punya paket langganan aktif
-        if (!$subscription) {
-            return back()->with('error', 'Silakan pilih paket langganan terlebih dahulu sebelum membuat bucket.');
-        }
-
-        // 3. Cek kuota bucket sesuai paket langganan
         $totalBuckets = $user->storageBuckets()->count();
-        if ($totalBuckets >= $subscription->bucket_limit) {
+        if ($totalBuckets >= $storageSub->bucket_limit) {
             return back()->with('error', 'Batas maksimal bucket Anda sudah tercapai. Silakan upgrade paket layanan.');
         }
 
-        // 4. Buat nama unik untuk di MiniStack (agar terisolasi & tidak bentrok antar user)
-        // Format: user_{id}_{nama_bucket}
-        $miniStackBucketName = 'user-' . $user->id . '-' . strtolower($request->name);
+        // Buat nama unik untuk MiniStack
+        $miniStackName = 'user-' . $user->id . '-' . strtolower($request->name);
 
-        // 5. Perintahkan MiniStack untuk membuat bucket
-        $isCreated = $this->miniStack->createBucket($miniStackBucketName);
+        $isCreated = $this->miniStack->createBucket($miniStackName);
 
-        // Jika MiniStack gagal merespons, batalkan proses
-        if (!$isCreated) {
+        if (! $isCreated) {
             return back()->with('error', 'Gagal terhubung ke MiniStack. Silakan coba lagi nanti.');
         }
 
-        // 6. Jika berhasil di MiniStack, catat ke database Laravel
         StorageBucket::create([
-            'user_id' => $user->id,
-            'name' => $request->name,
-            'ministack_bucket_name' => $miniStackBucketName,
-            'size_bytes' => 0, // Awalnya 0 bytes
-            'is_active' => true,
+            'user_id'       => $user->id,
+            'name'          => $request->name,
+            'ministack_name' => $miniStackName,
+            'region'        => $request->input('region', 'ap-southeast-1'),
+            'is_public'     => false,
+            'versioning'    => false,
+            'size_bytes'    => 0,
+            'object_count'  => 0,
+            'is_active'     => true,
         ]);
 
-        // 7. Catat ke tabel log aktivitas sesuai spesifikasi PRD
         ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'Create Bucket',
+            'user_id'       => $user->id,
+            'action'        => 'Create Bucket',
             'resource_type' => 'Storage',
             'resource_name' => $request->name,
-            'ip_address' => $request->ip(),
-            'metadata' => json_encode([
-                'ministack_name' => $miniStackBucketName,
-                'status' => 'success'
-            ])
+            'device_type'   => 'web',
+            'status'        => 'success',
+            'ip_address'    => $request->ip(),
+            'metadata'      => ['ministack_name' => $miniStackName],
         ]);
 
-        // Kembalikan user ke dashboard dengan pesan sukses
-        return redirect()->route('dashboard')->with('success', 'Bucket berhasil dibuat dan diisolasi di MiniStack!');
+        return redirect()->route('dashboard')->with('success', 'Bucket berhasil dibuat!');
     }
 
     public function show(StorageBucket $bucket)
@@ -104,12 +93,12 @@ class StorageController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $files = $this->miniStack->listObjects($bucket->ministack_bucket_name);
+        $files = $this->miniStack->listObjects($bucket->ministack_name);
 
         return view('storage.show', [
-            'bucket'     => $bucket,
-            'files'      => $files,
-            'miniStack'  => $this->miniStack,
+            'bucket'    => $bucket,
+            'files'     => $files,
+            'miniStack' => $this->miniStack,
         ]);
     }
 
@@ -123,7 +112,7 @@ class StorageController extends Controller
         }
 
         $request->validate([
-            'file' => 'required|file|max:51200' // max 50MB
+            'file' => 'required|file|max:51200'
         ]);
 
         $file     = $request->file('file');
@@ -132,30 +121,46 @@ class StorageController extends Controller
         $mime     = $file->getMimeType();
 
         $uploaded = $this->miniStack->uploadObject(
-            $bucket->ministack_bucket_name,
+            $bucket->ministack_name,
             $fileName,
             $contents,
             $mime
         );
 
-        if (!$uploaded) {
+        if (! $uploaded) {
             return back()->with('error', 'Gagal mengupload file ke MiniStack.');
         }
 
-        // Update ukuran bucket
+        // Simpan record objek ke tabel storage_objects
+        StorageObject::create([
+            'bucket_id'     => $bucket->id,
+            'user_id'       => Auth::id(),
+            'object_key'    => $fileName,
+            'original_name' => $file->getClientOriginalName(),
+            'content_type'  => $mime,
+            'size_bytes'    => $file->getSize(),
+            'storage_class' => 'STANDARD',
+            'is_deleted'    => false,
+            'uploaded_at'   => now(),
+        ]);
+
+        // Update ukuran & object_count bucket
         $bucket->increment('size_bytes', $file->getSize());
+        $bucket->increment('object_count');
 
         ActivityLog::create([
             'user_id'       => Auth::id(),
             'action'        => 'Upload File',
             'resource_type' => 'Storage',
             'resource_name' => $fileName,
+            'device_type'   => 'web',
+            'status'        => 'success',
             'ip_address'    => $request->ip(),
-            'metadata'      => json_encode([
-                'bucket'   => $bucket->name,
-                'size'     => $file->getSize(),
-                'mime'     => $mime,
-            ])
+            'metadata'      => [
+                'bucket' => $bucket->name,
+                'size'   => $file->getSize(),
+                'mime'   => $mime,
+            ],
         ]);
 
         return back()->with('success', "File {$fileName} berhasil diupload!");
@@ -173,12 +178,23 @@ class StorageController extends Controller
         $fileName = $request->input('file_name');
 
         $deleted = $this->miniStack->deleteObject(
-            $bucket->ministack_bucket_name,
+            $bucket->ministack_name,
             $fileName
         );
 
-        if (!$deleted) {
+        if (! $deleted) {
             return back()->with('error', 'Gagal menghapus file.');
+        }
+
+        // Soft-delete record di storage_objects
+        $obj = StorageObject::where('bucket_id', $bucket->id)
+            ->where('object_key', $fileName)
+            ->first();
+
+        if ($obj) {
+            $bucket->decrement('size_bytes', $obj->size_bytes);
+            $bucket->decrement('object_count');
+            $obj->update(['is_deleted' => true]);
         }
 
         ActivityLog::create([
@@ -186,8 +202,10 @@ class StorageController extends Controller
             'action'        => 'Delete File',
             'resource_type' => 'Storage',
             'resource_name' => $fileName,
+            'device_type'   => 'web',
+            'status'        => 'success',
             'ip_address'    => $request->ip(),
-            'metadata'      => json_encode(['bucket' => $bucket->name])
+            'metadata'      => ['bucket' => $bucket->name],
         ]);
 
         return back()->with('success', "File {$fileName} berhasil dihapus.");
@@ -198,25 +216,22 @@ class StorageController extends Controller
      */
     public function destroy(StorageBucket $bucket)
     {
-        // Pastikan hanya pemilik bucket yang bisa menghapus
         if ($bucket->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
 
-        // Opsional: Tambahkan logika penghapusan di MiniStack lewat service
-        // $this->miniStack->deleteBucket($bucket->ministack_bucket_name);
-
         $bucketName = $bucket->name;
         $bucket->delete();
 
-        // Catat aktivitas penghapusan
         ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => 'Delete Bucket',
+            'user_id'       => Auth::id(),
+            'action'        => 'Delete Bucket',
             'resource_type' => 'Storage',
             'resource_name' => $bucketName,
-            'ip_address' => request()->ip(),
-            'metadata' => json_encode([])
+            'device_type'   => 'web',
+            'status'        => 'success',
+            'ip_address'    => request()->ip(),
+            'metadata'      => [],
         ]);
 
         return back()->with('success', 'Bucket berhasil dihapus.');

@@ -4,52 +4,64 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Subscription extends Model
+class StorageSubscription extends Model
 {
     protected $fillable = [
         'user_id',
         'plan',
+        'quota_gb',
         'bucket_limit',
-        'key_limit',
-        'storage_quota_gb',
-        'compute_units',
+        'price',
         'is_active',
-        'expires_at'
+        'expires_at',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'is_active'  => 'boolean',
     ];
 
+    /**
+     * Daftar paket storage yang tersedia.
+     */
     public static function availablePlans(): array
     {
         return [
             'free' => [
                 'name'         => 'Free',
                 'price'        => 0,
+                'quota_gb'     => 5,
                 'bucket_limit' => 3,
-                'key_limit'    => 2,
-                'storage_gb'   => 5,
             ],
             'starter' => [
-                'name'         => 'Pro',
+                'name'         => 'Starter',
                 'price'        => 49000,
+                'quota_gb'     => 50,
                 'bucket_limit' => 10,
-                'key_limit'    => 5,
-                'storage_gb'   => 50,
             ],
             'pro' => [
-                'name'         => 'Business',
+                'name'         => 'Pro',
                 'price'        => 149000,
+                'quota_gb'     => 500,
                 'bucket_limit' => 50,
-                'key_limit'    => 20,
-                'storage_gb'   => 500,
             ],
         ];
     }
 
+    // ── Relationships ──────────────────────────────────────────────
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function storageBuckets()
+    {
+        return $this->hasMany(StorageBucket::class, 'user_id', 'user_id');
+    }
+
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class, 'subscription_id');
     }
 }

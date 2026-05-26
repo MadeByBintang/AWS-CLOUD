@@ -73,10 +73,23 @@ Route::middleware('auth')->group(function () {
     |------------------------------------------------------------------
     */
     Route::prefix('compute')->name('compute.')->group(function () {
-        Route::get('/',             [\App\Http\Controllers\ComputeController::class, 'index'])->name('index');
-        Route::get('/create',       [\App\Http\Controllers\ComputeController::class, 'create'])->name('create');
-        Route::post('/',            [\App\Http\Controllers\ComputeController::class, 'store'])->name('store');
+        Route::get('/',              [\App\Http\Controllers\ComputeController::class, 'index'])->name('index');
+        Route::get('/create',        [\App\Http\Controllers\ComputeController::class, 'create'])->name('create');
+        Route::post('/',             [\App\Http\Controllers\ComputeController::class, 'store'])->name('store');
+        Route::patch('/{instance}/toggle', [\App\Http\Controllers\ComputeController::class, 'toggleStatus'])->name('toggle');
         Route::delete('/{instance}', [\App\Http\Controllers\ComputeController::class, 'destroy'])->name('destroy');
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | DATABASE (DBaaS)
+    |------------------------------------------------------------------
+    */
+    Route::prefix('database')->name('database.')->group(function () {
+        Route::get('/',         [\App\Http\Controllers\DatabaseController::class, 'index'])->name('index');
+        Route::get('/create',   [\App\Http\Controllers\DatabaseController::class, 'create'])->name('create');
+        Route::post('/',        [\App\Http\Controllers\DatabaseController::class, 'store'])->name('store');
+        Route::delete('/{id}',  [\App\Http\Controllers\DatabaseController::class, 'destroy'])->name('destroy');
     });
 
     /*

@@ -4,23 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Credential extends Model
+class Resource extends Model
 {
     protected $fillable = [
         'user_id',
-        'service_type',
+        'resource_type',
+        'resource_id',
         'name',
-        'access_key',
-        'secret_key',
-        'permissions',
-        'is_active',
-        'last_used_at',
+        'region',
+        'status',
+        'metadata',
     ];
 
     protected $casts = [
-        'permissions'  => 'array',
-        'is_active'    => 'boolean',
-        'last_used_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     // ── Relationships ──────────────────────────────────────────────
@@ -28,5 +25,13 @@ class Credential extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relasi polymorphic: mengarah ke model aktual (StorageBucket, ComputeInstance, ApiKey)
+     */
+    public function resourceable()
+    {
+        return $this->morphTo(__FUNCTION__, 'resource_type', 'resource_id');
     }
 }

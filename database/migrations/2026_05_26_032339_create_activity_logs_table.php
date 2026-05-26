@@ -14,9 +14,11 @@ return new class extends Migration
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('action');
-            $table->string('resource_type');
-            $table->string('resource_name');
+            $table->string('action');                       // nama aksi (mis. "Create Bucket")
+            $table->string('resource_type');                // jenis resource (Storage, Compute, dll.)
+            $table->string('resource_name');                // nama resource yang terdampak
+            $table->string('device_type')->nullable();      // desktop, mobile, api
+            $table->string('status')->nullable();           // success, failed, pending
             $table->string('ip_address')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();

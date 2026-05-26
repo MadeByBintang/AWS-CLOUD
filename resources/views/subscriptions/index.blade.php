@@ -102,7 +102,7 @@
                     </li>
                 </ul>
 
-                @if (($subscription->plan_name ?? 'Free') === 'Free')
+                @if (($storageSub->plan ?? 'free') === 'free')
                     <button class="btn sub-btn-current" disabled>
                         <span class="w-1.5 h-1.5 rounded-full bg-accent-green mr-2 animate-pulse"></span>
                         Paket Saat Ini
@@ -166,13 +166,13 @@
                     </li>
                 </ul>
 
-                @if (($subscription->plan_name ?? '') === 'Pro')
+                @if (($storageSub->plan ?? '') === 'starter')
                     <button class="btn sub-btn-current" disabled>
                         <span class="w-1.5 h-1.5 rounded-full bg-accent-green mr-2 animate-pulse"></span>
                         Paket Saat Ini
                     </button>
                 @else
-                    <a href="{{ route('subscriptions.checkout', 'pro') }}" class="btn btn-primary sub-btn">
+                    <a href="{{ route('subscriptions.checkout', 'starter') }}" class="btn btn-primary sub-btn">
                         Upgrade ke Pro →
                     </a>
                 @endif
@@ -227,13 +227,13 @@
                     </li>
                 </ul>
 
-                @if (($subscription->plan_name ?? '') === 'Business')
+                @if (($storageSub->plan ?? '') === 'pro')
                     <button class="btn sub-btn-current" disabled>
                         <span class="w-1.5 h-1.5 rounded-full bg-accent-green mr-2 animate-pulse"></span>
                         Paket Saat Ini
                     </button>
                 @else
-                    <a href="{{ route('subscriptions.checkout', 'business') }}" class="btn sub-btn-purple sub-btn">
+                    <a href="{{ route('subscriptions.checkout', 'pro') }}" class="btn sub-btn-purple sub-btn">
                         Upgrade ke Business →
                     </a>
                 @endif
@@ -242,21 +242,21 @@
     </div>
 
     {{-- ── Current subscription info ───────────────────────── --}}
-    @if ($subscription ?? false)
+    @if ($storageSub ?? false)
         <div class="bg-card border border-rim rounded-2xl px-[22px] py-5 mb-8">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div class="font-space text-[10px] text-ink-muted tracking-[1.5px] uppercase mb-2">Langganan Aktif Anda
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="text-[20px] font-extrabold text-ink-primary">{{ $subscription->plan_name }}</span>
+                        <span class="text-[20px] font-extrabold text-ink-primary">{{ ucfirst($storageSub->plan) }}</span>
                         <span class="badge badge-green">● Aktif</span>
                     </div>
                     <div class="text-[12px] text-ink-muted mt-1">
                         Berlaku hingga
                         <strong
-                            class="text-ink-secondary">{{ $subscription->expires_at?->format('d M Y') ?? 'Unlimited' }}</strong>
-                        @if ($subscription->expires_at && $subscription->expires_at->diffInDays(now()) <= 7)
+                            class="text-ink-secondary">{{ $storageSub->expires_at?->format('d M Y') ?? 'Unlimited' }}</strong>
+                        @if ($storageSub->expires_at && $storageSub->expires_at->diffInDays(now()) <= 7)
                             <span class="ml-2 badge badge-orange">⚠ Hampir berakhir</span>
                         @endif
                     </div>
