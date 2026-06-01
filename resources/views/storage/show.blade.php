@@ -7,7 +7,7 @@
         <div class="flex items-center justify-between px-6 py-4 border-b border-rim">
             <div>
                 <h2 class="text-[16px] font-bold text-ink-primary">🪣 {{ $bucket->name }}</h2>
-                <p class="text-[12px] text-ink-muted mt-0.5">{{ $bucket->ministack_bucket_name }}</p>
+                <p class="text-[12px] text-ink-muted mt-0.5">{{ $bucket->ministack_name }}</p>
             </div>
             <a href="{{ route('dashboard') }}" class="btn btn-outline text-sm px-4 py-2">← Kembali</a>
         </div>
@@ -68,7 +68,7 @@
                                 <td class="py-3 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         {{-- Download --}}
-                                        <a href="{{ $miniStack->getObjectUrl($bucket->ministack_bucket_name, $file['key']) }}"
+                                        <a href="{{ $miniStack->getObjectUrl($bucket->ministack_name, $file['key']) }}"
                                             target="_blank" class="text-[11px] text-accent-bright hover:underline">
                                             Download
                                         </a>

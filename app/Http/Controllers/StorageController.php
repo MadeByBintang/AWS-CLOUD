@@ -116,7 +116,8 @@ class StorageController extends Controller
         ]);
 
         $file     = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
+        $original = str_replace(' ', '_', $file->getClientOriginalName());
+        $fileName = time() . '_' . $original;
         $contents = file_get_contents($file->getRealPath());
         $mime     = $file->getMimeType();
 

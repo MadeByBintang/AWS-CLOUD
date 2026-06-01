@@ -86,6 +86,24 @@ class User extends Authenticatable
         return $this->hasMany(StorageObject::class);
     }
 
+    public function getStorageUsedGbAttribute()
+    {
+        $bytes = $this->storageBuckets()->sum('size_bytes');
+        return round($bytes / 1073741824, 2);
+    }
+
+    public function getStorageQuotaGbAttribute()
+    {
+        return $this->getOrCreateStorageSub()->quota_gb;
+    }
+
+    public function getStorageUsedPercentageAttribute()
+    {
+        $quota = $this->storage_quota_gb;
+        if ($quota <= 0) return 0;
+        return min(100, round(($this->storage_used_gb / $quota) * 100));
+    }
+
     // ── Compute ───────────────────────────────────────────────────
 
     public function computeSubscriptions()

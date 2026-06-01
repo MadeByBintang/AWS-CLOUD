@@ -35,14 +35,14 @@ class StorageSubscription extends Model
             ],
             'starter' => [
                 'name'         => 'Starter',
-                'price'        => 49000,
-                'quota_gb'     => 50,
+                'price'        => 54999,
+                'quota_gb'     => 15,
                 'bucket_limit' => 10,
             ],
             'pro' => [
                 'name'         => 'Pro',
-                'price'        => 149000,
-                'quota_gb'     => 500,
+                'price'        => 119999,
+                'quota_gb'     => 30,
                 'bucket_limit' => 50,
             ],
         ];

@@ -121,6 +121,12 @@
                 <span class="w-5 text-center text-[15px]">💳</span>
                 Billing
             </a>
+
+            <a href="{{ route('diagnostic.index') }}"
+                class="nav-item {{ request()->routeIs('diagnostic.*') ? 'active' : '' }}">
+                <span class="w-5 text-center text-[15px]">🩺</span>
+                Diagnostic
+            </a>
         </nav>
 
         {{-- Account nav --}}
@@ -183,12 +189,52 @@
                 📋
             </a>
 
-            <a href="#"
-                class="w-[34px] h-[34px] bg-card border border-rim rounded-lg flex items-center justify-center text-[15px] text-ink-muted no-underline transition-all hover:border-rim-light hover:text-ink-primary relative">
-                🔔
-                <span
-                    class="absolute top-1.5 right-[7px] w-1.5 h-1.5 bg-accent-red rounded-full border-[1.5px] border-base"></span>
-            </a>
+            <div class="relative" id="notifDropdownContainer">
+                <button onclick="toggleNotifDropdown(event)"
+                    class="w-[34px] h-[34px] bg-card border border-rim rounded-lg flex items-center justify-center text-[15px] text-ink-muted no-underline transition-all hover:border-rim-light hover:text-ink-primary relative focus:outline-none">
+                    🔔
+                    @php $unreadCount = auth()->user()->unreadNotifications->count(); @endphp
+                    @if($unreadCount > 0)
+                    <span id="notifBadge" class="absolute top-1.5 right-[7px] flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-red opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-accent-red border-[1.5px] border-base"></span>
+                    </span>
+                    @endif
+                </button>
+                
+                {{-- Dropdown Menu --}}
+                <div id="notifDropdown" class="hidden absolute right-0 top-full mt-2 w-72 bg-card border border-rim shadow-lg rounded-xl z-50 overflow-hidden transform origin-top-right transition-all">
+                    <div class="px-4 py-3 border-b border-rim bg-base/50 flex justify-between items-center">
+                        <span class="font-bold text-[13px] text-ink-primary">Notifikasi ({{ $unreadCount }})</span>
+                        @if($unreadCount > 0)
+                            <span id="notifMarkRead" onclick="markNotificationsRead()" class="text-[10px] text-accent hover:underline cursor-pointer">Tandai dibaca</span>
+                        @else
+                            <span class="text-[10px] text-ink-dim">Semua terbaca</span>
+                        @endif
+                    </div>
+                    <div class="max-h-[300px] overflow-y-auto">
+                        @forelse(auth()->user()->unreadNotifications as $notif)
+                            <div class="notif-item px-4 py-3 border-b border-rim/50 hover:bg-base/50 transition-all duration-500 cursor-pointer">
+                                <div class="flex gap-3">
+                                    <div class="mt-0.5 text-[14px]">{{ $notif->data['icon'] ?? 'ℹ' }}</div>
+                                    <div>
+                                        <div class="text-[12px] font-bold text-ink-primary">{{ $notif->data['title'] ?? 'Pemberitahuan' }}</div>
+                                        <div class="text-[11px] text-ink-muted leading-tight mt-0.5">{{ $notif->data['message'] ?? '' }}</div>
+                                        <div class="text-[9px] text-ink-dim font-space mt-1.5">{{ strtoupper($notif->created_at->diffForHumans()) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="px-4 py-6 text-center">
+                                <div class="text-[12px] text-ink-muted">Belum ada notifikasi baru.</div>
+                            </div>
+                        @endforelse
+                    </div>
+                    <div class="px-4 py-2 bg-base/80 text-center border-t border-rim">
+                        <a href="{{ route('activity.index') }}" class="text-[11px] text-accent hover:underline">Lihat Semua Aktivitas →</a>
+                    </div>
+                </div>
+            </div>
 
             <a href="{{ route('profile.edit') }}"
                 class="w-[34px] h-[34px] bg-card border border-rim rounded-lg flex items-center justify-center text-[15px] text-ink-muted no-underline transition-all hover:border-rim-light hover:text-ink-primary">
@@ -200,15 +246,56 @@
     {{-- ── Main content ─────────────────────────────────────── --}}
     <main class="ml-0 lg:ml-sidebar mt-topbar flex-1 p-7 min-h-[calc(100vh-60px)]">
 
-        @if (session('success'))
-            <div class="alert alert-success">✓ {{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-error">✕ {{ session('error') }}</div>
-        @endif
-        @if (session('info'))
-            <div class="alert alert-info">ℹ {{ session('info') }}</div>
-        @endif
+        {{-- Floating Toast Container --}}
+        <div id="toastContainer" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+            @if (session('success'))
+                <div class="toast-message bg-card border border-rim shadow-xl rounded-xl px-4 py-3 flex items-start gap-3 transform translate-y-8 opacity-0 transition-all duration-500 pointer-events-auto" style="animation: slideUpFade 0.5s forwards;">
+                    <div class="mt-0.5 text-accent-green">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-[13px] font-bold text-ink-primary">Berhasil</div>
+                        <div class="text-[12px] text-ink-muted">{{ session('success') }}</div>
+                    </div>
+                    <button onclick="this.closest('.toast-message').remove()" class="ml-2 text-ink-dim hover:text-ink-primary focus:outline-none">×</button>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="toast-message bg-card border border-rim shadow-xl rounded-xl px-4 py-3 flex items-start gap-3 transform translate-y-8 opacity-0 transition-all duration-500 pointer-events-auto" style="animation: slideUpFade 0.5s forwards;">
+                    <div class="mt-0.5 text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-[13px] font-bold text-ink-primary">Terjadi Kesalahan</div>
+                        <div class="text-[12px] text-ink-muted">{{ session('error') }}</div>
+                    </div>
+                    <button onclick="this.closest('.toast-message').remove()" class="ml-2 text-ink-dim hover:text-ink-primary focus:outline-none">×</button>
+                </div>
+            @endif
+            @if (session('info'))
+                <div class="toast-message bg-card border border-rim shadow-xl rounded-xl px-4 py-3 flex items-start gap-3 transform translate-y-8 opacity-0 transition-all duration-500 pointer-events-auto" style="animation: slideUpFade 0.5s forwards;">
+                    <div class="mt-0.5 text-accent-cyan">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-[13px] font-bold text-ink-primary">Informasi</div>
+                        <div class="text-[12px] text-ink-muted">{{ session('info') }}</div>
+                    </div>
+                    <button onclick="this.closest('.toast-message').remove()" class="ml-2 text-ink-dim hover:text-ink-primary focus:outline-none">×</button>
+                </div>
+            @endif
+        </div>
+
+        <style>
+            @keyframes slideUpFade {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; transform: scale(1); }
+                to { opacity: 0; transform: scale(0.95); }
+            }
+        </style>
 
         @yield('content')
     </main>
@@ -221,6 +308,69 @@
             overlay.classList.toggle('!block');
             overlay.classList.toggle('hidden');
         }
+
+        function toggleNotifDropdown(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notifDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('notifDropdown');
+            const container = document.getElementById('notifDropdownContainer');
+            if (dropdown && !dropdown.classList.contains('hidden') && !container.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function markNotificationsRead() {
+            // Fetch API to backend
+            fetch('{{ route("notifications.mark-read") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({})
+            }).then(response => {
+                if(response.ok) {
+                    // Hide the red pinging badge
+                    const badge = document.getElementById('notifBadge');
+                    if(badge) badge.style.display = 'none';
+                    
+                    // Dim all notification items
+                    const items = document.querySelectorAll('.notif-item');
+                    items.forEach(item => {
+                        item.classList.add('opacity-40');
+                    });
+
+                    // Update mark as read button text
+                    const btn = document.getElementById('notifMarkRead');
+                    if(btn) {
+                        btn.textContent = 'Semua terbaca';
+                        btn.classList.add('text-ink-dim');
+                        btn.classList.remove('text-accent', 'hover:underline', 'cursor-pointer');
+                        btn.onclick = null;
+                    }
+                    
+                    // Update counter
+                    const header = document.querySelector('#notifDropdown .font-bold');
+                    if(header) header.textContent = 'Notifikasi (0)';
+                }
+            });
+        }
+
+        // Auto-dismiss toasts
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast-message');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOut 0.4s forwards';
+                    setTimeout(() => toast.remove(), 400);
+                }, 4000); // 4 seconds delay before dismissing
+            });
+        });
     </script>
     @stack('scripts')
 </body>

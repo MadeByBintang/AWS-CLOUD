@@ -27,10 +27,19 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])
         ->name('register.post');
 
-    // Forgot password (placeholder — bisa dihubungkan ke Laravel built-in)
-    Route::get('/forgot-password', function () {
-        return view('auth.forgot-password');
-    })->name('password.request');
+    // Forgot Password
+    Route::get('/forgot-password', [App\Http\Controllers\PasswordResetController::class, 'create'])
+        ->name('password.request');
+        
+    Route::post('/forgot-password', [App\Http\Controllers\PasswordResetController::class, 'store'])
+        ->name('password.email');
+
+    // Reset Password
+    Route::get('/reset-password/{token}', [App\Http\Controllers\PasswordResetController::class, 'edit'])
+        ->name('password.reset');
+        
+    Route::post('/reset-password', [App\Http\Controllers\PasswordResetController::class, 'update'])
+        ->name('password.store');
 });
 
 /*
@@ -50,6 +59,7 @@ Route::middleware('auth')->group(function () {
     // Dashboard utama
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+    Route::post('/notifications/mark-read', [DashboardController::class, 'markNotificationsRead'])->name('notifications.mark-read');
 
     /*
     |------------------------------------------------------------------
@@ -145,4 +155,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/settings',         [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::put('/settings',         [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
+
+    /*
+    |------------------------------------------------------------------
+    | DIAGNOSTIC
+    |------------------------------------------------------------------
+    */
+    Route::get('/diagnostic', [\App\Http\Controllers\DiagnosticController::class, 'index'])->name('diagnostic.index');
 });

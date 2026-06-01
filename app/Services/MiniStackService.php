@@ -68,6 +68,17 @@ class MiniStackService
             ])->withBody($fileContents, $mimeType)
                 ->put("{$this->baseUrl}/{$bucketName}/{$fileName}");
 
+            // Jika LocalStack direstart, bucket mungkin hilang. Recreate bucket lalu coba upload ulang.
+            if ($response->status() === 404) {
+                Log::warning("MiniStack upload: Bucket {$bucketName} missing (404). Attempting to recreate...");
+                $this->createBucket($bucketName);
+                
+                $response = Http::withHeaders([
+                    'Content-Type' => $mimeType,
+                ])->withBody($fileContents, $mimeType)
+                    ->put("{$this->baseUrl}/{$bucketName}/{$fileName}");
+            }
+
             Log::info("MiniStack upload: {$bucketName}/{$fileName} - status: " . $response->status());
 
             return $response->successful();

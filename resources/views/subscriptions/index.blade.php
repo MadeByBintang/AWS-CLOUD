@@ -128,7 +128,7 @@
                 <div class="sub-plan-name">Pro</div>
                 <div class="sub-plan-price">
                     <span class="sub-price-currency">Rp</span>
-                    <span class="sub-price-amount" data-monthly="99000" data-annual="79000">99.000</span>
+                    <span class="sub-price-amount" data-monthly="54999" data-annual="43999">54.999</span>
                     <span class="sub-price-period">/bulan</span>
                 </div>
                 <p class="sub-plan-desc">Untuk developer dan tim kecil yang butuh performa lebih dan skalabilitas.</p>
@@ -138,7 +138,7 @@
                 <ul class="sub-feature-list">
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>100 GB Storage</span>
+                        <span>15 GB Storage</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
@@ -189,7 +189,7 @@
                 <div class="sub-plan-name">Business</div>
                 <div class="sub-plan-price">
                     <span class="sub-price-currency">Rp</span>
-                    <span class="sub-price-amount" data-monthly="299000" data-annual="239000">299.000</span>
+                    <span class="sub-price-amount" data-monthly="119999" data-annual="95999">119.999</span>
                     <span class="sub-price-period">/bulan</span>
                 </div>
                 <p class="sub-plan-desc">Untuk bisnis yang memerlukan keandalan tinggi dan fitur enterprise.</p>
@@ -199,7 +199,7 @@
                 <ul class="sub-feature-list">
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>1 TB Storage</span>
+                        <span>30 GB Storage</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
@@ -312,7 +312,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ([['label' => 'Storage', 'free' => '5 GB', 'pro' => '100 GB', 'biz' => '1 TB'], ['label' => 'Bucket', 'free' => '3', 'pro' => '20', 'biz' => '∞'], ['label' => 'Access Keys', 'free' => '2', 'pro' => '10', 'biz' => '50'], ['label' => 'vCPU·h / bln', 'free' => '10', 'pro' => '500', 'biz' => '5.000'], ['label' => 'Compute Priority', 'free' => false, 'pro' => true, 'biz' => true], ['label' => 'Custom Domain', 'free' => false, 'pro' => false, 'biz' => true], ['label' => 'SLA 99.9%', 'free' => false, 'pro' => false, 'biz' => false]] as $row)
+                        @foreach ([['label' => 'Storage', 'free' => '5 GB', 'pro' => '15 GB', 'biz' => '30 GB'], ['label' => 'Bucket', 'free' => '3', 'pro' => '20', 'biz' => '∞'], ['label' => 'Access Keys', 'free' => '2', 'pro' => '10', 'biz' => '50'], ['label' => 'vCPU·h / bln', 'free' => '10', 'pro' => '500', 'biz' => '5.000'], ['label' => 'Compute Priority', 'free' => false, 'pro' => true, 'biz' => true], ['label' => 'Custom Domain', 'free' => false, 'pro' => false, 'biz' => true], ['label' => 'SLA 99.9%', 'free' => false, 'pro' => false, 'biz' => false]] as $row)
                             <tr>
                                 <td class="text-[13px] text-ink-secondary">{{ $row['label'] }}</td>
                                 <td class="text-center font-space text-[12px]">

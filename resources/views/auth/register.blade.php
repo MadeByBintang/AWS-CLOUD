@@ -207,10 +207,10 @@
                         class="w-4 h-4 mt-0.5 accent-accent flex-shrink-0 cursor-pointer">
                     <label for="terms" class="text-[12px] text-ink-muted leading-[1.6]">
                         Saya menyetujui
-                        <a href="#" class="text-accent-bright no-underline hover:text-accent-cyan">Syarat &amp;
+                        <a href="#" onclick="event.preventDefault(); event.stopPropagation(); openModal('terms');" class="text-accent-bright no-underline hover:text-accent-cyan relative z-10 cursor-pointer">Syarat &amp;
                             Ketentuan</a>
                         serta
-                        <a href="#" class="text-accent-bright no-underline hover:text-accent-cyan">Kebijakan
+                        <a href="#" onclick="event.preventDefault(); event.stopPropagation(); openModal('privacy');" class="text-accent-bright no-underline hover:text-accent-cyan relative z-10 cursor-pointer">Kebijakan
                             Privasi</a>
                         MiniStack. Data saya akan diproses sesuai ketentuan yang berlaku.
                     </label>
@@ -231,6 +231,33 @@
                     class="text-accent-bright no-underline font-semibold hover:text-accent-cyan">
                     Masuk di sini
                 </a>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    {{-- ── Custom Modal ─────────────────────────────────────── --}}
+    <div id="customModal" class="fixed inset-0 z-[200] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-deep/80 backdrop-blur-sm" onclick="closeModal()"></div>
+        
+        {{-- Modal Box --}}
+        <div class="relative bg-card w-[min(500px,90vw)] max-h-[80vh] border border-rim rounded-2xl shadow-2xl flex flex-col transform scale-95 transition-transform duration-300" id="modalBox">
+            <div class="px-6 py-5 border-b border-rim/50 flex items-center justify-between">
+                <h3 class="text-[18px] font-bold text-ink-primary m-0 flex items-center gap-2" id="modalTitle">
+                    {{-- Title will be injected via JS --}}
+                </h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-base/50 flex items-center justify-center text-ink-dim hover:text-ink-primary hover:bg-rim transition-colors cursor-pointer border-0">
+                    ✕
+                </button>
+            </div>
+            <div class="px-6 py-6 overflow-y-auto text-[14px] text-ink-muted leading-[1.7]" id="modalContent">
+                {{-- Content will be injected via JS --}}
+            </div>
+            <div class="px-6 py-4 border-t border-rim/50 flex justify-end bg-base/30 rounded-b-2xl">
+                <button onclick="closeModal()" class="bg-accent text-white font-bold py-2 px-5 rounded-lg text-[13px] hover:bg-accent-light transition-colors border-0 cursor-pointer shadow-accent">
+                    Mengerti
+                </button>
             </div>
         </div>
     </div>
@@ -254,6 +281,34 @@
             const label = document.getElementById('pwdLabel');
             label.textContent = val.length > 0 ? labels[score] : '';
             label.style.color = colors[score] || '';
+        }
+
+        // Modal Logic
+        const modalData = {
+            terms: {
+                title: '📄 Syarat & Ketentuan',
+                content: '<p class="mb-3">Dengan mendaftar dan menggunakan layanan MiniStack, Anda menyetujui persyaratan berikut:</p><ul class="list-disc pl-5 mb-3 space-y-1"><li>Anda tidak akan menggunakan infrastruktur cloud ini untuk kegiatan ilegal (spamming, mining, dll).</li><li>Sistem bersifat simulasi, namun penggunaan resource tetap diawasi.</li><li>MiniStack berhak menghentikan layanan kapan saja apabila ditemukan pelanggaran.</li></ul><p>Ketentuan ini dapat berubah sewaktu-waktu tanpa pemberitahuan sebelumnya.</p>'
+            },
+            privacy: {
+                title: '🛡️ Kebijakan Privasi',
+                content: '<p class="mb-3">Privasi Anda sangat penting bagi kami. Berikut adalah ringkasannya:</p><ul class="list-disc pl-5 mb-3 space-y-1"><li>Data kredensial dan API keys Anda dienkripsi menggunakan standar industri AES-256.</li><li>Kami tidak pernah menjual data pribadi Anda kepada pihak ketiga.</li><li>Data sesi Anda digunakan secara eksklusif untuk memberikan pengalaman simulasi AWS yang lebih baik.</li></ul>'
+            }
+        };
+
+        const modalOverlay = document.getElementById('customModal');
+        const modalBox = document.getElementById('modalBox');
+
+        function openModal(type) {
+            document.getElementById('modalTitle').innerHTML = modalData[type].title;
+            document.getElementById('modalContent').innerHTML = modalData[type].content;
+            
+            modalOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            modalBox.classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.add('opacity-0', 'pointer-events-none');
+            modalBox.classList.add('scale-95');
         }
     </script>
 

@@ -79,4 +79,10 @@ class DashboardController extends Controller
             'recentLogs'
         ));
     }
+
+    public function markNotificationsRead()
+    {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true]);
+    }
 }
