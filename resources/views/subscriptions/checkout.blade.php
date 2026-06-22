@@ -23,10 +23,12 @@
                     style="background: linear-gradient(135deg, #0d1a31 0%, #091220 100%)">
                     <div class="text-[11px] font-space text-ink-dim tracking-[1.5px] uppercase mb-2">Paket Dipilih</div>
                     <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-[20px]
-                            @if($plan === 'pro') bg-accent/20 border border-accent/30
-                            @elseif($plan === 'starter') bg-accent-cyan/10 border border-accent-cyan/20
-                            @else bg-accent-purple/10 border border-accent-purple/20 @endif">
+                        @php
+                            $iconClass = 'bg-accent-purple/10 border border-accent-purple/20'; // default
+                            if($plan === 'pro') $iconClass = 'bg-accent/20 border border-accent/30';
+                            elseif($plan === 'starter') $iconClass = 'bg-accent-cyan/10 border border-accent-cyan/20';
+                        @endphp
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-[20px] {{ $iconClass }}">
                             @if($plan === 'starter') 🚀 @elseif($plan === 'pro') 🏢 @else ⭐ @endif
                         </div>
                         <div>
