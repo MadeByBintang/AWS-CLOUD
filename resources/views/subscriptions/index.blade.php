@@ -74,19 +74,19 @@
                 <ul class="sub-feature-list">
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>5 GB Storage</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['free']['quota_gb'] }} GB Storage</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>3 Bucket</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['free']['bucket_limit'] }} Bucket</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>2 Access Keys</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['free']['access_key_limit'] }} Access Keys</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>10 vCPU·h / bulan</span>
+                        <span>{{ \App\Models\ComputeSubscription::availablePlans()['free']['compute_units'] }} vCPU·h / bulan</span>
                     </li>
                     <li class="sub-feature-item sub-feature-off">
                         <span class="sub-feature-icon sub-feature-icon-off">✕</span>
@@ -138,19 +138,19 @@
                 <ul class="sub-feature-list">
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>15 GB Storage</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['starter']['quota_gb'] }} GB Storage</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>20 Bucket</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['starter']['bucket_limit'] }} Bucket</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>10 Access Keys</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['starter']['access_key_limit'] }} Access Keys</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>500 vCPU·h / bulan</span>
+                        <span>{{ \App\Models\ComputeSubscription::availablePlans()['starter']['compute_units'] }} vCPU·h / bulan</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
@@ -170,6 +170,10 @@
                     <button class="btn sub-btn-current" disabled>
                         <span class="w-1.5 h-1.5 rounded-full bg-accent-green mr-2 animate-pulse"></span>
                         Paket Saat Ini
+                    </button>
+                @elseif (($storageSub->plan ?? '') === 'pro')
+                    <button class="btn btn-outline sub-btn" style="opacity:0.5;cursor:not-allowed;" disabled>
+                        ✓ Sudah Upgrade ke Business
                     </button>
                 @else
                     <a href="{{ route('subscriptions.checkout', 'starter') }}" class="btn btn-primary sub-btn">
@@ -199,19 +203,19 @@
                 <ul class="sub-feature-list">
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>30 GB Storage</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['pro']['quota_gb'] }} GB Storage</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>Unlimited Bucket</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['pro']['bucket_limit'] >= 9999 ? 'Unlimited' : \App\Models\StorageSubscription::availablePlans()['pro']['bucket_limit'] }} Bucket</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>50 Access Keys</span>
+                        <span>{{ \App\Models\StorageSubscription::availablePlans()['pro']['access_key_limit'] }} Access Keys</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
-                        <span>5.000 vCPU·h / bulan</span>
+                        <span>{{ number_format(\App\Models\ComputeSubscription::availablePlans()['pro']['compute_units'], 0, ',', '.') }} vCPU·h / bulan</span>
                     </li>
                     <li class="sub-feature-item sub-feature-on">
                         <span class="sub-feature-icon">✓</span>
@@ -249,7 +253,7 @@
                     <div class="font-space text-[10px] text-ink-muted tracking-[1.5px] uppercase mb-2">Langganan Aktif Anda
                     </div>
                     <div class="flex items-center gap-3">
-                        <span class="text-[20px] font-extrabold text-ink-primary">{{ ucfirst($storageSub->plan) }}</span>
+                        <span class="text-[20px] font-extrabold text-ink-primary">{{ $storageSub->displayName() }}</span>
                         <span class="badge badge-green">● Aktif</span>
                     </div>
                     <div class="text-[12px] text-ink-muted mt-1">
@@ -274,7 +278,15 @@
 
             {{-- Usage bar --}}
             <div class="mt-5 grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach ([['icon' => '🗄', 'label' => 'Storage', 'used' => $storageUsed ?? 4.5, 'total' => $storageQuota ?? 5, 'unit' => 'GB', 'pct' => $storagePercent ?? 45, 'grad' => 'from-accent to-accent-cyan'], ['icon' => '📂', 'label' => 'Bucket', 'used' => $totalBuckets ?? 0, 'total' => $bucketLimit ?? 3, 'unit' => '', 'pct' => $bucketPercent ?? 0, 'grad' => 'from-accent-cyan to-accent-green'], ['icon' => '🔑', 'label' => 'Access Keys', 'used' => $totalKeys ?? 0, 'total' => $keyLimit ?? 2, 'unit' => '', 'pct' => $keyPercent ?? 0, 'grad' => 'from-accent-orange to-accent-red'], ['icon' => '⚙', 'label' => 'vCPU·h', 'used' => $computeUsed ?? 0, 'total' => $computeLimit ?? 10, 'unit' => '', 'pct' => $computePercent ?? 0, 'grad' => 'from-accent-purple to-accent']] as $q)
+                @php
+                    $bucketLimitDisplay = ($storageSub->bucket_limit >= 9999) ? '∞' : $storageSub->bucket_limit;
+                @endphp
+                @foreach ([
+                    ['icon' => '🗄', 'label' => 'Storage',     'used' => $storageUsed ?? 0,     'total' => ($storageQuota ?? $storageSub->quota_gb),               'unit' => 'GB', 'pct' => $storagePercent ?? 0, 'grad' => 'from-accent to-accent-cyan'],
+                    ['icon' => '📂', 'label' => 'Bucket',      'used' => $totalBuckets ?? 0,    'total' => $bucketLimitDisplay,                                       'unit' => '',   'pct' => $bucketPercent ?? 0,  'grad' => 'from-accent-cyan to-accent-green'],
+                    ['icon' => '🔑', 'label' => 'Access Keys', 'used' => $totalKeys ?? 0,       'total' => ($keyLimit ?? $storageSub->access_key_limit ?? 2),         'unit' => '',   'pct' => $keyPercent ?? 0,     'grad' => 'from-accent-orange to-accent-red'],
+                    ['icon' => '⚙', 'label' => 'vCPU·h',      'used' => $computeUsed ?? 0,     'total' => ($computeLimit ?? 100),                                    'unit' => '',   'pct' => $computePercent ?? 0, 'grad' => 'from-accent-purple to-accent'],
+                ] as $q)
                     <div class="bg-field border border-rim rounded-xl px-3.5 py-3">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-[11px] text-ink-muted">{{ $q['icon'] }} {{ $q['label'] }}</span>
@@ -312,7 +324,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ([['label' => 'Storage', 'free' => '5 GB', 'pro' => '15 GB', 'biz' => '30 GB'], ['label' => 'Bucket', 'free' => '3', 'pro' => '20', 'biz' => '∞'], ['label' => 'Access Keys', 'free' => '2', 'pro' => '10', 'biz' => '50'], ['label' => 'vCPU·h / bln', 'free' => '10', 'pro' => '500', 'biz' => '5.000'], ['label' => 'Compute Priority', 'free' => false, 'pro' => true, 'biz' => true], ['label' => 'Custom Domain', 'free' => false, 'pro' => false, 'biz' => true], ['label' => 'SLA 99.9%', 'free' => false, 'pro' => false, 'biz' => false]] as $row)
+                        @php
+                            $p = \App\Models\StorageSubscription::availablePlans();
+                            $bizBucket = $p['pro']['bucket_limit'] >= 9999 ? '∞' : $p['pro']['bucket_limit'];
+                            $compareRows = [
+                                ['label' => 'Storage',          'free' => $p['free']['quota_gb'].' GB',    'pro' => $p['starter']['quota_gb'].' GB', 'biz' => $p['pro']['quota_gb'].' GB'],
+                                ['label' => 'Bucket',           'free' => (string)$p['free']['bucket_limit'], 'pro' => (string)$p['starter']['bucket_limit'], 'biz' => $bizBucket],
+                                ['label' => 'Access Keys',      'free' => (string)$p['free']['access_key_limit'], 'pro' => (string)$p['starter']['access_key_limit'], 'biz' => (string)$p['pro']['access_key_limit']],
+                                ['label' => 'vCPU·h / bln',    'free' => '10',   'pro' => '500',   'biz' => '5.000'],
+                                ['label' => 'Compute Priority', 'free' => false,  'pro' => true,    'biz' => true],
+                                ['label' => 'Custom Domain',    'free' => false,  'pro' => false,   'biz' => true],
+                                ['label' => 'SLA 99.9%',        'free' => false,  'pro' => false,   'biz' => false],
+                            ];
+                        @endphp
+                        @foreach ($compareRows as $row)
                             <tr>
                                 <td class="text-[13px] text-ink-secondary">{{ $row['label'] }}</td>
                                 <td class="text-center font-space text-[12px]">

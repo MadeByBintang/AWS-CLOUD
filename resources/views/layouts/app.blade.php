@@ -43,7 +43,7 @@
                 </div>
                 <div class="font-space text-[9px] text-accent-green tracking-[0.5px] uppercase">
                     @php $activePlan = auth()->user()->storageSubscriptions()->where('is_active', true)->latest()->value('plan') ?? 'free'; @endphp
-                    {{ ucfirst($activePlan) }} Plan
+                    {{ \App\Models\StorageSubscription::planLabels()[$activePlan] ?? ucfirst($activePlan) }} Plan
                 </div>
             </div>
             <div

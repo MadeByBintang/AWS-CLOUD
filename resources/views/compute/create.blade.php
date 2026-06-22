@@ -10,7 +10,7 @@
             ← Kembali ke Compute
         </a>
         <h1 class="text-[22px] font-extrabold text-ink-primary">Launch Instance Baru</h1>
-        <p class="text-[13px] text-ink-muted mt-1">Konfigurasi VM Anda. Paket aktif: <strong class="text-accent-cyan">{{ ucfirst($computeSub->plan) }}</strong>
+        <p class="text-[13px] text-ink-muted mt-1">Konfigurasi VM Anda. Paket aktif: <strong class="text-accent-cyan">{{ $computeSub->displayName() }}</strong>
             (max {{ $computeSub->vcpu_limit }} vCPU, {{ $computeSub->ram_go }} GB RAM)</p>
     </div>
 

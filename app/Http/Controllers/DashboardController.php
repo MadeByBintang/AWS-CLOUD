@@ -22,14 +22,14 @@ class DashboardController extends Controller
         $computeSub = $user->getOrCreateComputeSub();
 
         // ── Storage metrics ───────────────────────────────────────
-        $storageQuota   = $storageSub?->quota_gb ?? 5;
+        $storageQuota   = $storageSub?->quota_gb ?? \App\Models\StorageSubscription::availablePlans()['free']['quota_gb'];
         $storageUsed    = round($user->storageBuckets()->sum('size_bytes') / 1073741824, 2);
         $storagePercent = $storageQuota > 0
             ? min(100, round(($storageUsed / $storageQuota) * 100))
             : 0;
 
         // ── Bucket metrics ────────────────────────────────────────
-        $bucketLimit   = $storageSub?->bucket_limit ?? 3;
+        $bucketLimit   = $storageSub?->bucket_limit ?? \App\Models\StorageSubscription::availablePlans()['free']['bucket_limit'];
         $buckets       = StorageBucket::where('user_id', $user->id)
             ->latest()->take(6)->get();
         $totalBuckets  = $buckets->count();
@@ -38,7 +38,7 @@ class DashboardController extends Controller
             : 0;
 
         // ── Credential / Access Keys ──────────────────────────────
-        $keyLimit         = $storageSub?->bucket_limit ?? 2;
+        $keyLimit         = $storageSub?->access_key_limit ?? \App\Models\StorageSubscription::availablePlans()['free']['access_key_limit'];
         $totalKeys        = Credential::where('user_id', $user->id)
             ->where('is_active', true)->count();
         $keyPercent       = $keyLimit > 0
@@ -48,7 +48,7 @@ class DashboardController extends Controller
             ->where('is_active', true)->latest()->first();
 
         // ── Compute metrics ───────────────────────────────────────
-        $computeLimit   = $computeSub?->compute_units ?? 100;
+        $computeLimit   = $computeSub?->compute_units ?? \App\Models\ComputeSubscription::availablePlans()['free']['compute_units'];
         $computeUsed    = $user->computeInstances()->where('status', 'running')->count();
         $computePercent = $computeLimit > 0
             ? min(100, round(($computeUsed / $computeLimit) * 100))

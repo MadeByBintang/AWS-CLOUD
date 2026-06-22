@@ -38,7 +38,7 @@ class SubscriptionController extends Controller
             : 0;
 
         // ── Access Key metrics ────────────────────────────────────
-        $keyLimit      = $storageSub->bucket_limit ?? 2; // pakai bucket_limit sebagai proxy key limit
+        $keyLimit      = $storageSub->access_key_limit ?? 2;
         $totalKeys     = $user->credentials()->where('is_active', true)->count();
         $keyPercent    = $keyLimit > 0
             ? min(100, round(($totalKeys / $keyLimit) * 100))
@@ -110,18 +110,38 @@ class SubscriptionController extends Controller
 
         // Buat langganan baru
         $storageSub = StorageSubscription::create([
-            'user_id'      => $user->id,
-            'plan'         => $planKey,
-            'quota_gb'     => $planData['quota_gb'],
-            'bucket_limit' => $planData['bucket_limit'],
-            'price'        => $planData['price'],
-            'is_active'    => true,
-            'expires_at'   => $expiresAt,
+            'user_id'          => $user->id,
+            'plan'             => $planKey,
+            'quota_gb'         => $planData['quota_gb'],
+            'bucket_limit'     => $planData['bucket_limit'],
+            'access_key_limit' => $planData['access_key_limit'] ?? 2,
+            'price'            => $planData['price'],
+            'is_active'        => true,
+            'expires_at'       => $expiresAt,
         ]);
 
+        // Nonaktifkan langganan compute sebelumnya dan buat yang baru
+        $user->computeSubscriptions()->where('is_active', true)->update(['is_active' => false]);
+        $computePlans = \App\Models\ComputeSubscription::availablePlans();
+        if (isset($computePlans[$planKey])) {
+            $computeData = $computePlans[$planKey];
+            \App\Models\ComputeSubscription::create([
+                'user_id'       => $user->id,
+                'plan'          => $planKey,
+                'compute_units' => $computeData['compute_units'],
+                'vcpu_limit'    => $computeData['vcpu_limit'],
+                'ram_go'        => $computeData['ram_go'],
+                'price'         => 0, // Harga sudah dibayar via storage subscription bundle
+                'is_active'     => true,
+                'archive'       => false,
+                'sequence_at'   => now(),
+            ]);
+        }
+
+        $displayName = StorageSubscription::planLabels()[$planKey] ?? $planData['name'];
         return redirect()
             ->route('subscriptions.index')
-            ->with('success', "Langganan paket {$planData['name']} berhasil diaktifkan!");
+            ->with('success', "Langganan paket {$displayName} berhasil diaktifkan! 🎉");
     }
 
     /**
@@ -151,13 +171,29 @@ class SubscriptionController extends Controller
         $freePlan = StorageSubscription::availablePlans()['free'];
 
         StorageSubscription::create([
-            'user_id'      => $user->id,
-            'plan'         => 'free',
-            'quota_gb'     => $freePlan['quota_gb'],
-            'bucket_limit' => $freePlan['bucket_limit'],
-            'price'        => 0,
-            'is_active'    => true,
-            'expires_at'   => null,
+            'user_id'          => $user->id,
+            'plan'             => 'free',
+            'quota_gb'         => $freePlan['quota_gb'],
+            'bucket_limit'     => $freePlan['bucket_limit'],
+            'access_key_limit' => $freePlan['access_key_limit'] ?? 2,
+            'price'            => 0,
+            'is_active'        => true,
+            'expires_at'       => null,
+        ]);
+
+        // Downgrade compute juga
+        $user->computeSubscriptions()->where('is_active', true)->update(['is_active' => false]);
+        $freeCompute = \App\Models\ComputeSubscription::availablePlans()['free'];
+        \App\Models\ComputeSubscription::create([
+            'user_id'       => $user->id,
+            'plan'          => 'free',
+            'compute_units' => $freeCompute['compute_units'],
+            'vcpu_limit'    => $freeCompute['vcpu_limit'],
+            'ram_go'        => $freeCompute['ram_go'],
+            'price'         => 0,
+            'is_active'     => true,
+            'archive'       => false,
+            'sequence_at'   => now(),
         ]);
 
         return redirect()

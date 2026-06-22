@@ -37,15 +37,19 @@ class DatabaseController extends Controller
             ['id' => 'redis-7',        'name' => 'Redis 7',          'icon' => '🔴', 'desc' => 'In-memory cache & queue'],
         ];
 
+        $user = Auth::user();
+        $computeSub = $user->getOrCreateComputeSub();
+        $storageSub = $user->getOrCreateStorageSub();
+
         $sizes = [
-            ['id' => 'db.nano',   'name' => 'Nano',   'vcpu' => 1, 'ram' => 1,  'storage' => 20,  'price' => 0],
-            ['id' => 'db.micro',  'name' => 'Micro',  'vcpu' => 1, 'ram' => 2,  'storage' => 50,  'price' => 35000],
-            ['id' => 'db.small',  'name' => 'Small',  'vcpu' => 2, 'ram' => 4,  'storage' => 100, 'price' => 75000],
-            ['id' => 'db.medium', 'name' => 'Medium', 'vcpu' => 2, 'ram' => 8,  'storage' => 200, 'price' => 150000],
-            ['id' => 'db.large',  'name' => 'Large',  'vcpu' => 4, 'ram' => 16, 'storage' => 500, 'price' => 300000],
+            ['id' => 'db.nano',   'name' => 'Nano',   'vcpu' => 1, 'ram' => 1,  'storage' => 1],
+            ['id' => 'db.micro',  'name' => 'Micro',  'vcpu' => 1, 'ram' => 2,  'storage' => 2],
+            ['id' => 'db.small',  'name' => 'Small',  'vcpu' => 2, 'ram' => 4,  'storage' => 5],
+            ['id' => 'db.medium', 'name' => 'Medium', 'vcpu' => 2, 'ram' => 8,  'storage' => 10],
+            ['id' => 'db.large',  'name' => 'Large',  'vcpu' => 4, 'ram' => 16, 'storage' => 20],
         ];
 
-        return view('database.create', compact('engines', 'sizes'));
+        return view('database.create', compact('engines', 'sizes', 'computeSub', 'storageSub'));
     }
 
     public function store(Request $request)
@@ -62,14 +66,34 @@ class DatabaseController extends Controller
         $user = Auth::user();
 
         $sizeMap = [
-            'db.nano'   => ['vcpu' => 1, 'ram' => 1,  'storage' => 20],
-            'db.micro'  => ['vcpu' => 1, 'ram' => 2,  'storage' => 50],
-            'db.small'  => ['vcpu' => 2, 'ram' => 4,  'storage' => 100],
-            'db.medium' => ['vcpu' => 2, 'ram' => 8,  'storage' => 200],
-            'db.large'  => ['vcpu' => 4, 'ram' => 16, 'storage' => 500],
+            'db.nano'   => ['vcpu' => 1, 'ram' => 1,  'storage' => 1],
+            'db.micro'  => ['vcpu' => 1, 'ram' => 2,  'storage' => 2],
+            'db.small'  => ['vcpu' => 2, 'ram' => 4,  'storage' => 5],
+            'db.medium' => ['vcpu' => 2, 'ram' => 8,  'storage' => 10],
+            'db.large'  => ['vcpu' => 4, 'ram' => 16, 'storage' => 20],
         ];
 
         $size = $sizeMap[$request->db_size] ?? $sizeMap['db.nano'];
+
+        $computeSub = $user->getOrCreateComputeSub();
+        $storageSub = $user->getOrCreateStorageSub();
+        $databases = $this->getDatabases();
+        
+        $usedDbVcpu = array_sum(array_column($databases, 'vcpu'));
+        $usedDbRam = array_sum(array_column($databases, 'ram_gb'));
+        $usedDbStorage = array_sum(array_column($databases, 'storage_gb'));
+        
+        if (($usedDbVcpu + $size['vcpu']) > $computeSub->vcpu_limit) {
+            return back()->with('error', "Batas vCPU paket Anda ({$computeSub->vcpu_limit} vCPU) tidak mencukupi untuk instance DB ini.");
+        }
+        
+        if (($usedDbRam + $size['ram']) > $computeSub->ram_go) {
+            return back()->with('error', "Batas RAM paket Anda ({$computeSub->ram_go} GB) tidak mencukupi untuk instance DB ini.");
+        }
+
+        if (($usedDbStorage + $size['storage']) > $storageSub->quota_gb) {
+            return back()->with('error', "Sisa kuota Storage paket Anda tidak mencukupi untuk DB berukuran {$size['storage']} GB. Limit total DB: {$storageSub->quota_gb} GB.");
+        }
 
         $databases   = $this->getDatabases();
         $databases[] = [

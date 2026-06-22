@@ -10,7 +10,7 @@
             ← Kembali ke Database
         </a>
         <h1 class="text-[22px] font-extrabold text-ink-primary">Buat Database Baru</h1>
-        <p class="text-[13px] text-ink-muted mt-1">Managed database siap pakai dalam hitungan detik.</p>
+        <p class="text-[13px] text-ink-muted mt-1">Managed database siap pakai dalam hitungan detik. Paket aktif: <strong class="text-accent-cyan">{{ $computeSub->displayName() }}</strong> (max {{ $computeSub->vcpu_limit }} vCPU, {{ $computeSub->ram_go }} GB RAM)</p>
     </div>
 
     <form action="{{ route('database.store') }}" method="POST">
@@ -65,9 +65,11 @@
             <div class="font-space text-[10px] text-ink-muted tracking-widest uppercase mb-4">3. Pilih Ukuran Instance</div>
             <div class="grid grid-cols-1 gap-2.5">
                 @foreach ($sizes as $size)
-                    <label class="cursor-pointer">
+                    @php $locked = ($size['vcpu'] > $computeSub->vcpu_limit || $size['ram'] > $computeSub->ram_go || $size['storage'] > $storageSub->quota_gb); @endphp
+                    <label class="{{ $locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' }}">
                         <input type="radio" name="db_size" value="{{ $size['id'] }}" class="hidden peer"
-                            {{ old('db_size', 'db.nano') === $size['id'] ? 'checked' : '' }}>
+                            {{ old('db_size', 'db.nano') === $size['id'] ? 'checked' : '' }}
+                            {{ $locked ? 'disabled' : '' }}>
                         <div class="bg-field border border-rim rounded-xl px-4 py-3 flex items-center justify-between peer-checked:border-accent peer-checked:bg-accent/5 transition-all">
                             <div class="flex items-center gap-4">
                                 <div class="w-2 h-2 rounded-full border-2 border-rim peer-checked:border-accent bg-transparent flex-shrink-0"></div>
@@ -76,8 +78,8 @@
                                     <span class="font-space text-[11px] text-ink-muted ml-3">{{ $size['vcpu'] }} vCPU · {{ $size['ram'] }} GB RAM · {{ $size['storage'] }} GB SSD</span>
                                 </div>
                             </div>
-                            <div class="font-space text-[12px] {{ $size['price'] === 0 ? 'text-accent-green' : 'text-accent-bright' }} font-bold flex-shrink-0">
-                                {{ $size['price'] === 0 ? 'GRATIS' : 'Rp ' . number_format($size['price'], 0, ',', '.') . '/bln' }}
+                            <div class="font-space text-[12px] text-accent-bright font-bold flex-shrink-0">
+                                {{ $locked ? 'Melebihi Paket' : 'Termasuk Paket' }}
                             </div>
                         </div>
                     </label>

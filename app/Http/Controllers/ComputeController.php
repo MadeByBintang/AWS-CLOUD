@@ -78,6 +78,14 @@ class ComputeController extends Controller
             return back()->with('error', "Batas vCPU paket Anda ({$computeSub->vcpu_limit} vCPU) akan terlampaui. Silakan upgrade.");
         }
 
+        $usedRam = ComputeInstance::where('user_id', $user->id)
+            ->where('status', 'running')->sum('ram_gb');
+        $newRam = $ramMap[$request->instance_type] ?? 1;
+
+        if (($usedRam + $newRam) > $computeSub->ram_go) {
+            return back()->with('error', "Batas RAM paket Anda ({$computeSub->ram_go} GB) akan terlampaui. Silakan upgrade.");
+        }
+
         $instance = ComputeInstance::create([
             'user_id'         => $user->id,
             'subscription_id' => $computeSub->id,

@@ -46,7 +46,7 @@
             <div class="w-10 h-10 rounded-xl bg-accent-purple/20 flex items-center justify-center text-[18px]">📦</div>
             <div>
                 <div class="font-space text-[10px] text-ink-muted tracking-widest uppercase mb-0.5">Paket Compute Aktif</div>
-                <div class="text-[15px] font-bold text-ink-primary">{{ ucfirst($computeSub->plan) }}
+                <div class="text-[15px] font-bold text-ink-primary">{{ $computeSub->displayName() }}
                     <span class="badge badge-green ml-2">● Aktif</span>
                 </div>
             </div>

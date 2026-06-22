@@ -11,6 +11,7 @@ class StorageSubscription extends Model
         'plan',
         'quota_gb',
         'bucket_limit',
+        'access_key_limit',
         'price',
         'is_active',
         'expires_at',
@@ -22,28 +23,51 @@ class StorageSubscription extends Model
     ];
 
     /**
+     * Map internal plan keys → nama tampilan yang benar untuk user.
+     */
+    public static function planLabels(): array
+    {
+        return [
+            'free'    => 'Free',
+            'starter' => 'Pro',
+            'pro'     => 'Business',
+        ];
+    }
+
+    /**
+     * Nama tampilan paket ini (Pro, Business, dll).
+     */
+    public function displayName(): string
+    {
+        return static::planLabels()[$this->plan] ?? ucfirst($this->plan);
+    }
+
+    /**
      * Daftar paket storage yang tersedia.
      */
     public static function availablePlans(): array
     {
         return [
             'free' => [
-                'name'         => 'Free',
-                'price'        => 0,
-                'quota_gb'     => 5,
-                'bucket_limit' => 3,
+                'name'              => 'Free',
+                'price'             => 0,
+                'quota_gb'          => 5,
+                'bucket_limit'      => 3,
+                'access_key_limit'  => 2,
             ],
             'starter' => [
-                'name'         => 'Starter',
-                'price'        => 54999,
-                'quota_gb'     => 15,
-                'bucket_limit' => 10,
+                'name'              => 'Pro',        // ditampilkan sebagai "Pro"
+                'price'             => 54999,
+                'quota_gb'          => 15,
+                'bucket_limit'      => 20,
+                'access_key_limit'  => 10,
             ],
             'pro' => [
-                'name'         => 'Pro',
-                'price'        => 119999,
-                'quota_gb'     => 30,
-                'bucket_limit' => 50,
+                'name'              => 'Business',   // ditampilkan sebagai "Business"
+                'price'             => 119999,
+                'quota_gb'          => 30,
+                'bucket_limit'      => 99999,        // Unlimited
+                'access_key_limit'  => 50,
             ],
         ];
     }

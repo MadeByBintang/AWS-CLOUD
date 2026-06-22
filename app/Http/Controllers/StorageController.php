@@ -84,7 +84,7 @@ class StorageController extends Controller
             'metadata'      => ['ministack_name' => $miniStackName],
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Bucket berhasil dibuat!');
+        return redirect()->route('storage.index')->with('success', 'Bucket berhasil dibuat!');
     }
 
     public function show(StorageBucket $bucket)
@@ -235,6 +235,6 @@ class StorageController extends Controller
             'metadata'      => [],
         ]);
 
-        return back()->with('success', 'Bucket berhasil dihapus.');
+        return redirect()->route('storage.index')->with('success', 'Bucket berhasil dihapus.');
     }
 }

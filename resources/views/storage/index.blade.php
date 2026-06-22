@@ -46,7 +46,7 @@
             <div class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-[18px]">📦</div>
             <div>
                 <div class="font-space text-[10px] text-ink-muted tracking-widest uppercase mb-0.5">Paket Storage Aktif</div>
-                <div class="text-[15px] font-bold text-ink-primary">{{ ucfirst($storageSub->plan) }}
+                <div class="text-[15px] font-bold text-ink-primary">{{ $storageSub->displayName() }}
                     <span class="badge badge-green ml-2">● Aktif</span>
                 </div>
             </div>
@@ -54,15 +54,38 @@
         <div class="flex items-center gap-6 text-center">
             <div>
                 <div class="font-space text-[10px] text-ink-muted mb-0.5">Bucket Limit</div>
-                <div class="text-[18px] font-bold text-accent-cyan">{{ $buckets->count() }} / {{ $storageSub->bucket_limit }}</div>
+                <div class="text-[18px] font-bold
+                    @if($buckets->count() >= $storageSub->bucket_limit) text-red-400 @else text-accent-cyan @endif">
+                    {{ $buckets->count() }} / {{ $storageSub->bucket_limit >= 9999 ? '∞' : $storageSub->bucket_limit }}
+                </div>
             </div>
             <div>
                 <div class="font-space text-[10px] text-ink-muted mb-0.5">Kuota</div>
                 <div class="text-[18px] font-bold text-accent-cyan">{{ $storageSub->quota_gb }} GB</div>
             </div>
-            <a href="{{ route('subscriptions.index') }}" class="btn btn-outline text-[12px] py-[6px] px-3.5">Upgrade</a>
+            @if(($storageSub->plan ?? 'free') === 'free')
+                <a href="{{ route('subscriptions.checkout', 'starter') }}" class="btn btn-primary text-[12px] py-[6px] px-3.5">🚀 Upgrade Pro</a>
+            @elseif(($storageSub->plan ?? '') === 'starter')
+                <a href="{{ route('subscriptions.checkout', 'pro') }}" class="btn text-[12px] py-[6px] px-3.5" style="background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.4);color:#a78bfa;">🏢 Upgrade Business</a>
+            @else
+                <a href="{{ route('billing.index') }}" class="btn btn-outline text-[12px] py-[6px] px-3.5">💳 Billing</a>
+            @endif
         </div>
     </div>
+
+    {{-- Upgrade alert jika bucket limit penuh --}}
+    @if($buckets->count() >= $storageSub->bucket_limit)
+    <div class="border border-red-500/30 bg-red-500/[0.08] rounded-2xl px-5 py-3 mb-6 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <span class="text-[20px]">⚠️</span>
+            <div>
+                <div class="text-[13px] font-bold text-red-400">Batas Bucket Tercapai</div>
+                <div class="text-[12px] text-ink-muted">Anda tidak bisa membuat bucket baru. Upgrade paket untuk menambah kapasitas.</div>
+            </div>
+        </div>
+        <a href="{{ route('subscriptions.index') }}" class="btn btn-primary text-[12px] py-2 px-4 flex-shrink-0">Upgrade Sekarang</a>
+    </div>
+    @endif
 
     {{-- ── Bucket List ──────────────────────────────────────────────── --}}
     <div class="bg-card border border-rim rounded-2xl overflow-hidden">

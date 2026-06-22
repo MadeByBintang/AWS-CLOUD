@@ -63,13 +63,14 @@ class User extends Authenticatable
         if (! $sub) {
             $free = StorageSubscription::availablePlans()['free'];
             $sub  = StorageSubscription::create([
-                'user_id'      => $this->id,
-                'plan'         => 'free',
-                'quota_gb'     => $free['quota_gb'],
-                'bucket_limit' => $free['bucket_limit'],
-                'price'        => 0,
-                'is_active'    => true,
-                'expires_at'   => null,
+                'user_id'          => $this->id,
+                'plan'             => 'free',
+                'quota_gb'         => $free['quota_gb'],
+                'bucket_limit'     => $free['bucket_limit'],
+                'access_key_limit' => $free['access_key_limit'] ?? 2,
+                'price'            => 0,
+                'is_active'        => true,
+                'expires_at'       => null,
             ]);
         }
 

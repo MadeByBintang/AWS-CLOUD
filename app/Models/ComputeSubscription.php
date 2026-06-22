@@ -25,6 +25,26 @@ class ComputeSubscription extends Model
     ];
 
     /**
+     * Map internal plan keys → nama tampilan yang benar untuk user.
+     */
+    public static function planLabels(): array
+    {
+        return [
+            'free'    => 'Free',
+            'starter' => 'Pro',
+            'pro'     => 'Business',
+        ];
+    }
+
+    /**
+     * Nama tampilan paket ini.
+     */
+    public function displayName(): string
+    {
+        return static::planLabels()[$this->plan] ?? ucfirst($this->plan);
+    }
+
+    /**
      * Daftar paket compute yang tersedia.
      */
     public static function availablePlans(): array
@@ -33,23 +53,23 @@ class ComputeSubscription extends Model
             'free' => [
                 'name'          => 'Free',
                 'price'         => 0,
-                'compute_units' => 100,
+                'compute_units' => 10,
                 'vcpu_limit'    => 1,
                 'ram_go'        => 1,
             ],
             'starter' => [
-                'name'          => 'Starter',
-                'price'         => 79000,
+                'name'          => 'Pro',
+                'price'         => 54999, // bundled price (can match storage or be ignored if bundled)
                 'compute_units' => 500,
                 'vcpu_limit'    => 2,
-                'ram_go'        => 4,
+                'ram_go'        => 8,
             ],
             'pro' => [
-                'name'          => 'Pro',
-                'price'         => 199000,
-                'compute_units' => 2000,
+                'name'          => 'Business',
+                'price'         => 119999,
+                'compute_units' => 5000,
                 'vcpu_limit'    => 8,
-                'ram_go'        => 16,
+                'ram_go'        => 32,
             ],
         ];
     }

@@ -9,7 +9,14 @@
                 <h2 class="text-[16px] font-bold text-ink-primary">🪣 {{ $bucket->name }}</h2>
                 <p class="text-[12px] text-ink-muted mt-0.5">{{ $bucket->ministack_name }}</p>
             </div>
-            <a href="{{ route('dashboard') }}" class="btn btn-outline text-sm px-4 py-2">← Kembali</a>
+            <div class="flex items-center gap-3">
+                <form action="{{ route('storage.destroy', $bucket->id) }}" method="POST" onsubmit="return confirm('Peringatan: Seluruh file di dalam bucket ini akan ikut terhapus. Anda yakin ingin menghapus bucket ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn text-sm px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20">Hapus Bucket</button>
+                </form>
+                <a href="{{ route('storage.index') }}" class="btn btn-outline text-sm px-4 py-2">← Kembali</a>
+            </div>
         </div>
 
         {{-- Alert --}}
