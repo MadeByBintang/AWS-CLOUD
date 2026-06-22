@@ -19,17 +19,20 @@
 
         {{-- Overall badge --}}
         @if ($overall === 'ok')
-            <div class="flex items-center gap-2 bg-accent-green/10 border border-accent-green/30 text-accent-green rounded-xl px-4 py-2 flex-shrink-0">
+            <div
+                class="flex items-center gap-2 bg-accent-green/10 border border-accent-green/30 text-accent-green rounded-xl px-4 py-2 flex-shrink-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-accent-green animate-pulse"></span>
                 <span class="font-space text-[12px] font-bold tracking-widest uppercase">All Systems Operational</span>
             </div>
         @elseif ($overall === 'warn')
-            <div class="flex items-center gap-2 bg-accent-orange/10 border border-accent-orange/30 text-accent-orange rounded-xl px-4 py-2 flex-shrink-0">
+            <div
+                class="flex items-center gap-2 bg-accent-orange/10 border border-accent-orange/30 text-accent-orange rounded-xl px-4 py-2 flex-shrink-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-accent-orange animate-pulse"></span>
                 <span class="font-space text-[12px] font-bold tracking-widest uppercase">Partial Degradation</span>
             </div>
         @else
-            <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-2 flex-shrink-0">
+            <div
+                class="flex items-center gap-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl px-4 py-2 flex-shrink-0">
                 <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
                 <span class="font-space text-[12px] font-bold tracking-widest uppercase">System Error Detected</span>
             </div>
@@ -38,10 +41,10 @@
 
     {{-- ── Summary stat bar ────────────────────────────────────────── --}}
     @php
-        $okCount   = collect($checks)->where('status', 'ok')->count();
+        $okCount = collect($checks)->where('status', 'ok')->count();
         $warnCount = collect($checks)->where('status', 'warn')->count();
-        $errCount  = collect($checks)->where('status', 'error')->count();
-        $total     = count($checks);
+        $errCount = collect($checks)->where('status', 'error')->count();
+        $total = count($checks);
     @endphp
     <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-card border border-accent-green/30 rounded-2xl px-5 py-4 text-center">
@@ -90,11 +93,14 @@
                         <div class="flex items-center gap-2.5 mb-0.5">
                             <span class="text-[14px] font-bold text-ink-primary">{{ $check['label'] }}</span>
                             @if ($check['status'] === 'ok')
-                                <span class="font-space text-[9px] bg-accent-green/10 border border-accent-green/25 text-accent-green rounded-full px-2 py-[2px] tracking-widest uppercase">OK</span>
+                                <span
+                                    class="font-space text-[9px] bg-accent-green/10 border border-accent-green/25 text-accent-green rounded-full px-2 py-[2px] tracking-widest uppercase">OK</span>
                             @elseif ($check['status'] === 'warn')
-                                <span class="font-space text-[9px] bg-accent-orange/10 border border-accent-orange/25 text-accent-orange rounded-full px-2 py-[2px] tracking-widest uppercase">WARN</span>
+                                <span
+                                    class="font-space text-[9px] bg-accent-orange/10 border border-accent-orange/25 text-accent-orange rounded-full px-2 py-[2px] tracking-widest uppercase">WARN</span>
                             @else
-                                <span class="font-space text-[9px] bg-red-500/10 border border-red-500/25 text-red-400 rounded-full px-2 py-[2px] tracking-widest uppercase">ERROR</span>
+                                <span
+                                    class="font-space text-[9px] bg-red-500/10 border border-red-500/25 text-red-400 rounded-full px-2 py-[2px] tracking-widest uppercase">ERROR</span>
                             @endif
                         </div>
                         <p class="font-space text-[11px] text-ink-muted leading-relaxed">{{ $check['detail'] }}</p>
@@ -109,16 +115,13 @@
 
         {{-- Endpoint info --}}
         <div class="bg-card border border-rim rounded-2xl p-5">
-            <div class="font-space text-[10px] text-ink-muted tracking-widest uppercase mb-4">⚡ Konfigurasi Object Storage</div>
-            @foreach ([
-                ['label' => 'Endpoint URL',  'value' => $url],
-                ['label' => 'Region',        'value' => env('MINISTACK_REGION', 'us-east-1')],
-                ['label' => 'Access Key',    'value' => env('MINISTACK_KEY', 'test')],
-                ['label' => 'Path Style',    'value' => env('MINISTACK_PATH_STYLE', 'true')],
-            ] as $info)
+            <div class="font-space text-[10px] text-ink-muted tracking-widest uppercase mb-4">⚡ Konfigurasi Object Storage
+            </div>
+            @foreach ([['label' => 'Endpoint URL', 'value' => $url], ['label' => 'Region', 'value' => env('MINISTACK_REGION', 'us-east-1')], ['label' => 'Access Key', 'value' => env('MINISTACK_KEY', 'test')], ['label' => 'Path Style', 'value' => env('MINISTACK_PATH_STYLE', 'true')]] as $info)
                 <div class="flex items-center gap-3 mb-2.5 last:mb-0">
                     <div class="text-[12px] text-ink-muted w-[110px] flex-shrink-0">{{ $info['label'] }}</div>
-                    <div class="font-space text-[12px] text-accent-bright bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <div
+                        class="font-space text-[12px] text-accent-bright bg-accent/5 border border-accent/15 rounded-lg px-3 py-1.5 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
                         {{ $info['value'] }}
                     </div>
                 </div>
@@ -131,23 +134,27 @@
             <div class="space-y-3 text-[12px] text-ink-muted leading-relaxed">
                 <div class="flex items-start gap-2">
                     <span class="text-accent-green flex-shrink-0 mt-0.5">▶</span>
-                    <span>Jika MiniStack <strong class="text-ink-primary">ERROR</strong>, pastikan LocalStack berjalan:
-                        <code class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5 ml-1">docker run -p 4566:4566 localstack/localstack</code>
+                    <span>Jika MiniStack <strong class="text-ink-primary">ERROR</strong>, pastikan ministack berjalan:
+                        <code class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5 ml-1">docker
+                            run -p 4566:4566 ministack/ministack</code>
                     </span>
                 </div>
                 <div class="flex items-start gap-2">
                     <span class="text-accent-green flex-shrink-0 mt-0.5">▶</span>
                     <span>Alternatif pakai <strong class="text-ink-primary">MinIO</strong>:
-                        <code class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5 ml-1">MINISTACK_URL=http://localhost:9000</code>
+                        <code
+                            class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5 ml-1">MINISTACK_URL=http://localhost:9000</code>
                     </span>
                 </div>
                 <div class="flex items-start gap-2">
                     <span class="text-accent-green flex-shrink-0 mt-0.5">▶</span>
-                    <span>Jika <strong class="text-ink-primary">WARN</strong> di List Objects, XML response mungkin kosong — ini normal untuk bucket baru.</span>
+                    <span>Jika <strong class="text-ink-primary">WARN</strong> di List Objects, XML response mungkin kosong —
+                        ini normal untuk bucket baru.</span>
                 </div>
                 <div class="flex items-start gap-2">
                     <span class="text-accent-green flex-shrink-0 mt-0.5">▶</span>
-                    <span>Cek log detail di <code class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5">storage/logs/laravel.log</code></span>
+                    <span>Cek log detail di <code
+                            class="font-space text-[10px] bg-field border border-rim rounded px-1.5 py-0.5">storage/logs/laravel.log</code></span>
                 </div>
             </div>
         </div>
